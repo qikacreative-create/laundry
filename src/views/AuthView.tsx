@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { Lock, Mail, User, Phone, Building2, Eye, EyeOff, ShieldCheck, X } from 'lucide-react';
+import { Lock, Mail, User, Phone, Building2, Eye, EyeOff, ShieldCheck, X, Loader2, AlertCircle } from 'lucide-react';
+import {
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+} from 'firebase/auth';
+import { auth, googleProvider } from '../firebase';
+import { FirebaseSyncService } from '../utils/firebaseSync';
 import { User as UserType } from '../types';
 
 interface AuthViewProps {
@@ -12,6 +19,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess, staffList, o
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Form states
   const [namaLaundry, setNamaLaundry] = useState('');
@@ -22,78 +31,118 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess, staffList, o
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agreeTerms, setAgreeTerms] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) {
-      alert('Email/No. HP dan password harus diisi.');
+      setAuthError('Email/No. HP dan password harus diisi.');
       return;
     }
 
-    // Check if logging in as staff or owner
-    const staffMatch = staffList.find(
-      (s) => s.emailOrPhone.toLowerCase() === email.trim().toLowerCase() || s.username.toLowerCase() === email.trim().toLowerCase()
-    );
+    setIsLoading(true);
+    setAuthError(null);
 
-    if (staffMatch) {
-      onLoginSuccess(staffMatch);
-      return;
+    try {
+      const res = await signInWithEmailAndPassword(auth, email.trim(), password.trim());
+      const userProfile = await FirebaseSyncService.getOrCreateUserProfile({
+        uid: res.user.uid,
+        email: res.user.email,
+        displayName: res.user.displayName,
+        phoneNumber: res.user.phoneNumber,
+      });
+      onLoginSuccess(userProfile);
+    } catch (err: any) {
+      console.warn('Firebase email login error:', err.code, err.message);
+
+      // Check if logging in as staff
+      const staffMatch = staffList.find(
+        (s) =>
+          s.emailOrPhone.toLowerCase() === email.trim().toLowerCase() ||
+          s.username.toLowerCase() === email.trim().toLowerCase()
+      );
+
+      if (staffMatch) {
+        onLoginSuccess(staffMatch);
+        return;
+      }
+
+      if (err.code === 'auth/operation-not-allowed') {
+        setAuthError('Metode Email/Password belum diaktifkan di Firebase Console. Silakan gunakan tombol "Masuk dengan Google" di bawah!');
+      } else if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+        setAuthError('Email atau password tidak sesuai. Coba lagi atau gunakan "Masuk dengan Google".');
+      } else {
+        setAuthError(err.message || 'Gagal masuk. Silakan gunakan tombol "Masuk dengan Google" di bawah.');
+      }
+    } finally {
+      setIsLoading(false);
     }
-
-    // Owner match or demo fallback
-    if (
-      email.toLowerCase().includes('laundry') ||
-      email.toLowerCase().includes('owner') ||
-      email.toLowerCase() === ownerUser.emailOrPhone.toLowerCase()
-    ) {
-      onLoginSuccess(ownerUser);
-      return;
-    }
-
-    // General fallback: logged in as owner
-    onLoginSuccess({
-      ...ownerUser,
-      emailOrPhone: email.trim(),
-      displayName: username || 'Owner',
-    });
   };
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!namaLaundry.trim() || !telepon.trim() || !email.trim() || !password.trim()) {
-      alert('Semua kolom wajib diisi.');
+    if (!namaLaundry.trim() || !email.trim() || !password.trim()) {
+      setAuthError('Semua kolom wajib diisi.');
       return;
     }
     if (password !== confirmPassword) {
-      alert('Password dan konfirmasi password tidak cocok.');
+      setAuthError('Password dan konfirmasi password tidak cocok.');
       return;
     }
     if (!agreeTerms) {
-      alert('Anda harus menyetujui Syarat dan Ketentuan untuk mendaftar.');
+      setAuthError('Anda harus menyetujui Syarat dan Ketentuan untuk mendaftar.');
       return;
     }
 
-    const trialEnd = Date.now() + 7 * 24 * 60 * 60 * 1000;
-    const newOwner: UserType = {
-      uid: `own-${Date.now()}`,
-      emailOrPhone: email.trim(),
-      username: username.trim() || namaLaundry.trim(),
-      displayName: username.trim() || namaLaundry.trim(),
-      nomorTelepon: telepon.trim(),
-      role: 'owner',
-      laundryId: 'lnd-1',
-      laundries: { 'lnd-1': namaLaundry.trim() },
-      walletBalance: 0,
-      subscriptionEndDate: trialEnd,
-      subscriptionType: 'premium',
-      createdAt: Date.now(),
-    };
+    setIsLoading(true);
+    setAuthError(null);
 
-    alert('Pendaftaran berhasil! Akun Anda aktif dengan masa uji coba 7 hari.');
-    onLoginSuccess(newOwner);
+    try {
+      const res = await createUserWithEmailAndPassword(auth, email.trim(), password.trim());
+      const userProfile = await FirebaseSyncService.getOrCreateUserProfile({
+        uid: res.user.uid,
+        email: res.user.email,
+        displayName: username.trim() || namaLaundry.trim(),
+        phoneNumber: telepon.trim(),
+      });
+      alert('Pendaftaran berhasil! Akun Anda aktif di Firebase.');
+      onLoginSuccess(userProfile);
+    } catch (err: any) {
+      console.error('Sign up error:', err);
+      if (err.code === 'auth/operation-not-allowed') {
+        setAuthError('Metode pendaftaran Email belum diaktifkan di Firebase Console. Silakan gunakan tombol "Daftar dengan Google" di bawah!');
+      } else if (err.code === 'auth/email-already-in-use') {
+        setAuthError('Email ini sudah terdaftar. Silakan login langsung.');
+      } else if (err.code === 'auth/weak-password') {
+        setAuthError('Password minimal 6 karakter.');
+      } else {
+        setAuthError(err.message || 'Gagal mendaftar.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleGoogleSignIn = () => {
-    onLoginSuccess(ownerUser);
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    setAuthError(null);
+    try {
+      const res = await signInWithPopup(auth, googleProvider);
+      const userProfile = await FirebaseSyncService.getOrCreateUserProfile({
+        uid: res.user.uid,
+        email: res.user.email,
+        displayName: res.user.displayName,
+        phoneNumber: res.user.phoneNumber,
+      });
+      onLoginSuccess(userProfile);
+    } catch (err: any) {
+      console.error('Google Sign In error:', err);
+      if (err.code === 'auth/popup-closed-by-user') {
+        setAuthError('Jendela login Google ditutup sebelum selesai.');
+      } else {
+        setAuthError('Gagal login Google: ' + (err.message || 'Terjadi kesalahan'));
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -251,11 +300,26 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess, staffList, o
               </div>
             )}
 
+            {authError && (
+              <div className="p-3 rounded-xl bg-red-950/80 border border-red-500/50 text-red-200 text-xs flex items-start gap-2 animate-fade-in">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <span className="leading-tight">{authError}</span>
+              </div>
+            )}
+
             <button
               type="submit"
-              className="w-full py-3 rounded-xl bg-[#800000] hover:bg-[#660000] text-white font-black text-xs uppercase tracking-wider shadow-lg transition active:scale-98 mt-2"
+              disabled={isLoading}
+              className="w-full py-3 rounded-xl bg-[#800000] hover:bg-[#660000] disabled:opacity-60 text-white font-black text-xs uppercase tracking-wider shadow-lg transition active:scale-98 mt-2 flex items-center justify-center gap-2"
             >
-              {isSignUp ? 'Daftar Sekarang' : 'Masuk Aplikasi'}
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Memproses...</span>
+                </>
+              ) : (
+                <span>{isSignUp ? 'Daftar Sekarang' : 'Masuk Aplikasi'}</span>
+              )}
             </button>
           </form>
 
@@ -263,28 +327,33 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess, staffList, o
           <div className="pt-2">
             <button
               onClick={handleGoogleSignIn}
+              disabled={isLoading}
               type="button"
-              className="w-full py-2.5 rounded-xl border border-slate-600 bg-slate-900 hover:bg-slate-950 text-slate-200 text-xs font-bold flex items-center justify-center gap-2 transition"
+              className="w-full py-2.5 rounded-xl border border-slate-600 bg-slate-900 hover:bg-slate-950 disabled:opacity-60 text-slate-200 text-xs font-bold flex items-center justify-center gap-2 transition"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                />
-              </svg>
-              <span>{isSignUp ? 'Daftar dengan Google' : 'Masuk dengan Google'}</span>
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+              ) : (
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                  />
+                </svg>
+              )}
+              <span>{isSignUp ? 'Daftar dengan Google' : 'Masuk dengan Google (Akun Nyata)'}</span>
             </button>
           </div>
 

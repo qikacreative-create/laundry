@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { auth } from './firebase';
+import { FirebaseSyncService } from './utils/firebaseSync';
 import { StorageService, defaultSettings, defaultOwnerUser } from './utils/storage';
 import {
   Transaksi,
@@ -60,7 +63,7 @@ export default function App() {
   // Application State
   const [activeView, setActiveView] = useState<ViewType>('splash');
   const [currentUser, setCurrentUser] = useState<User | null>(() =>
-    StorageService.get<User | null>('active_user', defaultOwnerUser)
+    StorageService.get<User | null>('active_user', null)
   );
 
   const [settings, setSettings] = useState<SettingsData>(() =>
@@ -75,9 +78,13 @@ export default function App() {
     StorageService.get<string>('current_laundry_id', 'lnd-1')
   );
 
-  const [transaksiList, setTransaksiList] = useState<Transaksi[]>(() =>
-    StorageService.get<Transaksi[]>('transaksi', [])
-  );
+  const [transaksiList, setTransaksiList] = useState<Transaksi[]>(() => {
+    const raw = StorageService.get<Transaksi[]>('transaksi', []);
+    return (Array.isArray(raw) ? raw : []).map((t) => ({
+      ...t,
+      items: Array.isArray(t?.items) ? t.items : [],
+    }));
+  });
 
   const [layananList, setLayananList] = useState<Layanan[]>(() =>
     StorageService.get<Layanan[]>('layanan', [])
@@ -135,11 +142,18 @@ export default function App() {
   const updateSettings = (newSettings: SettingsData) => {
     setSettings(newSettings);
     StorageService.set('settings', newSettings);
+    if (activeLaundryId) {
+      FirebaseSyncService.saveSettings(activeLaundryId, newSettings).catch(console.error);
+    }
   };
 
   const updateTransaksiList = (newList: Transaksi[]) => {
-    setTransaksiList(newList);
-    StorageService.set('transaksi', newList);
+    const safeList = (Array.isArray(newList) ? newList : []).map((t) => ({
+      ...t,
+      items: Array.isArray(t?.items) ? t.items : [],
+    }));
+    setTransaksiList(safeList);
+    StorageService.set('transaksi', safeList);
   };
 
   const updatePengeluaranList = (newList: Pengeluaran[]) => {
@@ -167,6 +181,69 @@ export default function App() {
     StorageService.set('staff', newList);
   };
 
+  // Load real user and real Firestore data when authenticated
+  const loadFirestoreData = async (user: User) => {
+    try {
+      const userLaundries = await FirebaseSyncService.fetchLaundries(user.uid);
+      const targetLaundryId = userLaundries[0]?.id || user.laundryId || `lnd-${user.uid}`;
+      if (userLaundries.length > 0) {
+        updateLaundries(userLaundries);
+      }
+      setActiveLaundryId(targetLaundryId);
+
+      // Fetch transactions for this real user/branch
+      const trxs = await FirebaseSyncService.fetchTransaksi(targetLaundryId);
+      updateTransaksiList(trxs);
+
+      // Fetch customers
+      const custs = await FirebaseSyncService.fetchPelanggan(targetLaundryId);
+      updatePelangganList(custs);
+
+      // Fetch services
+      const lays = await FirebaseSyncService.fetchLayanan(targetLaundryId);
+      if (lays.length > 0) {
+        updateLayananList(lays);
+      }
+
+      // Fetch expenses
+      const exps = await FirebaseSyncService.fetchPengeluaran(targetLaundryId);
+      updatePengeluaranList(exps);
+
+      // Fetch settings
+      const st = await FirebaseSyncService.fetchSettings(targetLaundryId);
+      if (st) {
+        setSettings(st);
+        StorageService.set('settings', st);
+      }
+    } catch (err) {
+      console.error('Error loading Firestore data:', err);
+    }
+  };
+
+  // Firebase Auth Observer
+  useEffect(() => {
+    StorageService.initData();
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      if (fbUser) {
+        const profile = await FirebaseSyncService.getOrCreateUserProfile({
+          uid: fbUser.uid,
+          email: fbUser.email,
+          displayName: fbUser.displayName,
+          phoneNumber: fbUser.phoneNumber,
+        });
+        setCurrentUser(profile);
+        StorageService.set('active_user', profile);
+        await loadFirestoreData(profile);
+      } else {
+        const stored = StorageService.get<User | null>('active_user', null);
+        if (!stored) {
+          setCurrentUser(null);
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
   // Handlers
   const handleSelectBranch = (laundryId: string) => {
     setActiveLaundryId(laundryId);
@@ -179,10 +256,12 @@ export default function App() {
   ) => {
     if (data.id) {
       // Edit existing
+      const updatedTrx = { ...data, id: data.id } as Transaksi;
       const updatedList = transaksiList.map((t) =>
-        t.id === data.id ? ({ ...data, id: data.id } as Transaksi) : t
+        t.id === data.id ? updatedTrx : t
       );
       updateTransaksiList(updatedList);
+      FirebaseSyncService.saveTransaksi(updatedTrx).catch(console.error);
       setSelectedTransaksiId(data.id);
       setActiveView('detail_transaksi');
     } else {
@@ -201,6 +280,7 @@ export default function App() {
 
       const updatedList = [newTrx, ...transaksiList];
       updateTransaksiList(updatedList);
+      FirebaseSyncService.saveTransaksi(newTrx).catch(console.error);
 
       // Add points to customer if enabled
       if (settings.poinSystemEnabled && data.namaPelanggan) {
@@ -216,6 +296,7 @@ export default function App() {
           updatePelangganList(
             pelangganList.map((p) => (p.id === existingCust.id ? updatedCust : p))
           );
+          FirebaseSyncService.savePelanggan(updatedCust).catch(console.error);
         } else {
           const newCust: Pelanggan = {
             id: `pel-${Date.now()}`,
@@ -226,6 +307,7 @@ export default function App() {
             poin: earnedPoints,
           };
           updatePelangganList([...pelangganList, newCust]);
+          FirebaseSyncService.savePelanggan(newCust).catch(console.error);
         }
       }
 
@@ -236,6 +318,7 @@ export default function App() {
 
   const handleDeleteTransaction = (transaksiId: string) => {
     updateTransaksiList(transaksiList.filter((t) => t.id !== transaksiId));
+    FirebaseSyncService.deleteTransaksi(activeLaundryId, transaksiId).catch(console.error);
     setActiveView('dashboard');
   };
 
@@ -249,6 +332,7 @@ export default function App() {
     updateTransaksiList(
       transaksiList.map((t) => (t.id === trx.id ? updated : t))
     );
+    FirebaseSyncService.saveTransaksi(updated).catch(console.error);
   };
 
   const handleSaveCustomer = (cust: Pelanggan) => {
@@ -257,6 +341,7 @@ export default function App() {
       ? pelangganList.map((p) => (p.id === cust.id ? cust : p))
       : [...pelangganList, cust];
     updatePelangganList(updated);
+    FirebaseSyncService.savePelanggan(cust).catch(console.error);
   };
 
   const handleDeleteCustomer = (id: string) => {
@@ -269,10 +354,12 @@ export default function App() {
       ? layananList.map((l) => (l.id === lay.id ? lay : l))
       : [...layananList, lay];
     updateLayananList(updated);
+    FirebaseSyncService.saveLayanan(lay).catch(console.error);
   };
 
   const handleDeleteLayanan = (id: string) => {
     updateLayananList(layananList.filter((l) => l.id !== id));
+    FirebaseSyncService.deleteLayanan(activeLaundryId, id).catch(console.error);
   };
 
   const handleAddLaundry = (
@@ -393,8 +480,10 @@ export default function App() {
     const newPeng: Pengeluaran = {
       ...peng,
       id: `pg-${Date.now()}`,
+      laundryId: activeLaundryId,
     };
     updatePengeluaranList([newPeng, ...pengeluaranList]);
+    FirebaseSyncService.savePengeluaran(newPeng).catch(console.error);
     alert('Pengeluaran berhasil dicatat!');
   };
 
@@ -438,9 +527,10 @@ export default function App() {
           <AuthView
             ownerUser={defaultOwnerUser}
             staffList={staffList}
-            onLoginSuccess={(user) => {
+            onLoginSuccess={async (user) => {
               setCurrentUser(user);
               StorageService.set('active_user', user);
+              await loadFirestoreData(user);
               setActiveView('dashboard');
             }}
           />
@@ -655,9 +745,15 @@ export default function App() {
             onOpenKelolaOwner={() => setActiveView('kelola_owner')}
             onOpenKelolaKasir={() => setActiveView('kelola_kasir')}
             onOpenApkModal={() => setIsApkModalOpen(true)}
-            onLogout={() => {
+            onLogout={async () => {
+              try {
+                await signOut(auth);
+              } catch (e) {
+                console.error(e);
+              }
               setCurrentUser(null);
               StorageService.set('active_user', null);
+              StorageService.clearAllDummyData();
               setActiveView('auth');
             }}
           />

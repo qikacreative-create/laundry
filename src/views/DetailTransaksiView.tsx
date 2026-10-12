@@ -50,8 +50,8 @@ export const DetailTransaksiView: React.FC<DetailTransaksiViewProps> = ({
     }
     msg += `*${isLunas ? 'LUNAS' : 'BELUM LUNAS'}*\n\n`;
     msg += `Rincian Layanan:\n`;
-    transaksi.items.forEach((it) => {
-      msg += `• ${it.namaLayanan} (${it.berat} ${it.satuan}) = ${formatRupiah(it.subtotal)}\n`;
+    (transaksi.items || []).forEach((it) => {
+      msg += `• ${it?.namaLayanan || 'Layanan'} (${it?.berat || 0} ${it?.satuan || ''}) = ${formatRupiah(it?.subtotal || 0)}\n`;
     });
     msg += `\n${settings.chattyFooter}`;
 
@@ -128,15 +128,15 @@ export const DetailTransaksiView: React.FC<DetailTransaksiViewProps> = ({
           <div className="space-y-2 pt-2 border-t border-slate-100">
             <h3 className="text-xs font-bold text-slate-700">Rincian Layanan:</h3>
             <div className="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
-              {transaksi.items.map((it, idx) => (
+              {(transaksi.items || []).map((it, idx) => (
                 <div key={idx} className="p-3 text-xs flex justify-between items-center hover:bg-slate-50">
                   <div>
-                    <div className="font-bold text-slate-800">{it.namaLayanan}</div>
+                    <div className="font-bold text-slate-800">{it?.namaLayanan || 'Layanan'}</div>
                     <div className="text-slate-500 text-[11px]">
-                      {it.berat} {it.satuan} x {formatRupiah(it.hargaPerKg)}
+                      {it?.berat || 0} {it?.satuan || ''} x {formatRupiah(it?.hargaPerKg || it?.hargaSatuan || 0)}
                     </div>
                   </div>
-                  <div className="font-extrabold text-slate-900">{formatRupiah(it.subtotal)}</div>
+                  <div className="font-extrabold text-slate-900">{formatRupiah(it?.subtotal || 0)}</div>
                 </div>
               ))}
             </div>

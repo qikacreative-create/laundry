@@ -106,9 +106,9 @@ export const StatusPengerjaanView: React.FC<StatusPengerjaanViewProps> = ({
     .filter((t) => !!t.dikerjakanOleh)
     .reduce((acc, t) => {
       const staffName = t.dikerjakanOleh!;
-      const totalKg = (t.items || [])
-        .filter((it) => workloadMap[it.namaLayanan] ?? true)
-        .reduce((sum, it) => sum + (it.satuan.toLowerCase() === 'kg' ? it.berat : 1), 0);
+      const totalKg = (Array.isArray(t.items) ? t.items : [])
+        .filter((it) => it && (workloadMap[it.namaLayanan] ?? true))
+        .reduce((sum, it) => sum + (it?.satuan?.toLowerCase() === 'kg' ? (it.berat || 0) : 1), 0);
 
       acc[staffName] = (acc[staffName] || 0) + totalKg;
       return acc;
@@ -373,7 +373,9 @@ export const StatusPengerjaanView: React.FC<StatusPengerjaanViewProps> = ({
                     </div>
 
                     <div className="text-[11px] text-slate-500 italic truncate mt-0.5">
-                      {trx.items.map((it) => `${it.namaLayanan} (${it.berat} ${it.satuan})`).join(', ')}
+                      {Array.isArray(trx.items) && trx.items.length > 0
+                        ? trx.items.map((it) => `${it.namaLayanan || 'Layanan'} (${it.berat || 0} ${it.satuan || ''})`).join(', ')
+                        : 'Layanan Cuci'}
                     </div>
 
                     {trx.dikerjakanOleh && (

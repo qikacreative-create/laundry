@@ -160,6 +160,7 @@ export interface SettingsData {
   chattyFooter: string;
   useLogo: boolean;
   logoPath: string | null;
+  logoSize?: 'kecil' | 'sedang' | 'besar';
   estimasiDisplayMode: number; // 0 = per item, 1 = single line
   pengambilanTanpaSelesai: boolean;
   tampilkanTombolCetak: boolean;

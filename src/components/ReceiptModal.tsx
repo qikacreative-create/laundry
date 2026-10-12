@@ -158,10 +158,16 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                     <img
                       src={settings.logoPath}
                       alt="Logo"
-                      className="h-12 w-auto max-w-[120px] object-contain filter grayscale contrast-125"
+                      className={`w-auto object-contain filter grayscale contrast-125 ${
+                        settings.logoSize === 'kecil'
+                          ? 'h-7 max-w-[70px]'
+                          : settings.logoSize === 'besar'
+                          ? 'h-13 max-w-[130px]'
+                          : 'h-9 max-w-[95px]'
+                      }`}
                     />
                   ) : (
-                    <div className="w-12 h-12 rounded-full border-2 border-slate-900 flex items-center justify-center font-bold text-xs">
+                    <div className="w-10 h-10 rounded-full border-2 border-slate-900 flex items-center justify-center font-bold text-xs">
                       LS
                     </div>
                   )}
@@ -225,14 +231,14 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
 
               {/* Items List */}
               <div className="space-y-1.5 py-1">
-                {transaksi.items.map((item, idx) => (
+                {(transaksi.items || []).map((item, idx) => (
                   <div key={idx} className="space-y-0.5">
-                    <div className="font-bold text-[11px]">{item.namaLayanan}</div>
+                    <div className="font-bold text-[11px]">{item?.namaLayanan || 'Layanan'}</div>
                     <div className="flex justify-between text-[10px]">
                       <span>
-                        {item.berat} {item.satuan} x {formatNumberOnly(item.hargaPerKg)}
+                        {item?.berat || 0} {item?.satuan || ''} x {formatNumberOnly(item?.hargaPerKg || item?.hargaSatuan || 0)}
                       </span>
-                      <span>= {formatNumberOnly(item.subtotal)}</span>
+                      <span>= {formatNumberOnly(item?.subtotal || 0)}</span>
                     </div>
                   </div>
                 ))}

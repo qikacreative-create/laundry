@@ -18,8 +18,8 @@ export const SplashView: React.FC<SplashViewProps> = ({ onFinish, appName = "Kaf
     <div className="fixed inset-0 z-50 bg-[#800000] flex flex-col items-center justify-between p-8 text-white select-none animate-fade-in">
       <div />
       <div className="text-center space-y-4">
-        <div className="w-24 h-24 rounded-3xl bg-white/10 backdrop-blur-md flex items-center justify-center mx-auto shadow-2xl border border-white/20">
-          <Building2 className="w-12 h-12 text-white" />
+        <div className="w-20 h-20 rounded-2xl bg-white p-2 shadow-2xl border border-white/20 flex items-center justify-center mx-auto overflow-hidden">
+          <img src="/logo-kafela.png" alt="Logo" className="w-full h-full object-contain" />
         </div>
         <h1 className="text-3xl font-black tracking-tight">{appName}</h1>
         <p className="text-xs text-white/80 font-medium">Sistem Manajemen Kasir & Operasional Laundry</p>

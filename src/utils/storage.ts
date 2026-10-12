@@ -17,13 +17,14 @@ const STORAGE_KEY_PREFIX = 'laundry_suci_';
 export const defaultSettings: SettingsData = {
   appTitle: "Kafela's Laundry",
   printerName: 'RPP02N',
-  headerStruk: 'Barokah Laundry Suci',
-  address: 'Jl. Raya Cikutra No. 142, Bandung',
-  phoneNumber: '0856-5978-1477',
+  headerStruk: "Kafela's Laundry",
+  address: 'Jl. Utama, Bandung',
+  phoneNumber: '0812-3456-7890',
   footerStruk: 'Barang yang tidak diambil lebih dari 3 bulan akan disedekahkan.',
   chattyFooter: 'Terima kasih atas kepercayaan Anda!',
   useLogo: true,
-  logoPath: null,
+  logoPath: '/logo-kafela.png',
+  logoSize: 'sedang',
   estimasiDisplayMode: 0, // 0 = per item, 1 = single line
   pengambilanTanpaSelesai: true,
   tampilkanTombolCetak: true,
@@ -105,34 +106,26 @@ export const defaultStaffList: User[] = [
 export const defaultOwnerUser: User = {
   uid: 'own-1',
   emailOrPhone: 'laundrysuciapp@gmail.com',
-  username: 'Laundry Melati',
-  displayName: 'Hj. Barokah Suci',
-  nomorTelepon: '085659781477',
+  username: 'Kafela',
+  displayName: "Kafela's Laundry",
+  nomorTelepon: '081234567890',
   role: 'owner',
   laundryId: 'lnd-1',
   laundries: {
-    'lnd-1': 'Cabang Utama Melati',
-    'lnd-2': 'Cabang 2 Pasteur',
+    'lnd-1': "Kafela's Laundry",
   },
-  walletBalance: 150000,
-  subscriptionEndDate: Date.now() + 28 * 24 * 60 * 60 * 1000, // 28 days left
+  walletBalance: 0,
+  subscriptionEndDate: Date.now() + 30 * 24 * 60 * 60 * 1000,
   subscriptionType: 'premium',
-  createdAt: Date.now() - 30 * 24 * 60 * 60 * 1000,
+  createdAt: Date.now(),
 };
 
 export const defaultLaundries: Laundry[] = [
   {
     id: 'lnd-1',
     ownerId: 'own-1',
-    namaLaundry: 'Cabang Utama Melati',
-    alamat: 'Jl. Melati No. 42, Antapani',
-    nomorTelepon: '085659781477',
-  },
-  {
-    id: 'lnd-2',
-    ownerId: 'own-1',
-    namaLaundry: 'Cabang 2 Pasteur',
-    alamat: 'Jl. Sukajadi No. 112, Pasteur',
+    namaLaundry: "Kafela's Laundry",
+    alamat: 'Jl. Utama, Bandung',
     nomorTelepon: '081234567890',
   },
 ];
@@ -387,22 +380,42 @@ export class StorageService {
     }
   }
 
+  static clearAllDummyData() {
+    try {
+      localStorage.removeItem(STORAGE_KEY_PREFIX + 'transaksi');
+      localStorage.removeItem(STORAGE_KEY_PREFIX + 'pelanggan');
+      localStorage.removeItem(STORAGE_KEY_PREFIX + 'pengeluaran');
+      localStorage.removeItem(STORAGE_KEY_PREFIX + 'staff');
+      localStorage.removeItem(STORAGE_KEY_PREFIX + 'manual_cash_logs');
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'transaksi', JSON.stringify([]));
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'pelanggan', JSON.stringify([]));
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'pengeluaran', JSON.stringify([]));
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'staff', JSON.stringify([]));
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'laundries', JSON.stringify(defaultLaundries));
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'settings', JSON.stringify(defaultSettings));
+      localStorage.setItem(STORAGE_KEY_PREFIX + 'initialized_v2', 'true');
+    } catch (e) {
+      console.error('Clear dummy error:', e);
+    }
+  }
+
   static initData() {
-    if (!localStorage.getItem(STORAGE_KEY_PREFIX + 'initialized')) {
+    // If not initialized or previously had old dummy data, start fresh
+    if (!localStorage.getItem(STORAGE_KEY_PREFIX + 'initialized_v2')) {
       StorageService.set('settings', defaultSettings);
       StorageService.set('layanan', defaultLayananList);
       StorageService.set('jenis_pengeluaran', defaultJenisPengeluaran);
       StorageService.set('jenis_pemasukan', defaultJenisPemasukan);
-      StorageService.set('pelanggan', defaultPelangganList);
-      StorageService.set('staff', defaultStaffList);
+      StorageService.set('pelanggan', []);
+      StorageService.set('staff', []);
       StorageService.set('owner', defaultOwnerUser);
       StorageService.set('laundries', defaultLaundries);
       StorageService.set('current_laundry_id', 'lnd-1');
-      StorageService.set('active_user', defaultOwnerUser);
-      StorageService.set('transaksi', getInitialTransactions());
-      StorageService.set('pengeluaran', getInitialPengeluaran());
-      StorageService.set('subscription_history', getInitialSubscriptionHistory());
-      StorageService.set('initialized', true);
+      StorageService.set('transaksi', []);
+      StorageService.set('pengeluaran', []);
+      StorageService.set('manual_cash_logs', []);
+      StorageService.set('subscription_history', []);
+      StorageService.set('initialized_v2', true);
     }
   }
 }

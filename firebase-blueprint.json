@@ -1,89 +1,134 @@
 {
   "entities": {
-    "Owner": {
-      "title": "Owner",
-      "description": "Profil pemilik studio",
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Profil pengguna kasir atau owner laundry",
       "type": "object",
       "properties": {
         "uid": { "type": "string" },
-        "namaBrand": { "type": "string" },
-        "username": { "type": "string" }
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["owner", "admin", "karyawan"] },
+        "laundryId": { "type": "string" },
+        "createdAt": { "type": "number" }
       },
-      "required": ["uid", "namaBrand"]
+      "required": ["uid", "role"]
     },
-    "Staff": {
-      "title": "Staff",
-      "description": "Data anggota tim",
+    "LaundryBranch": {
+      "title": "LaundryBranch",
+      "description": "Informasi cabang toko laundry",
       "type": "object",
       "properties": {
-        "uid": { "type": "string" },
-        "nama": { "type": "string" },
-        "role": { "type": "string", "enum": ["admin", "anggota"] },
-        "ownerParentId": { "type": "string" }
-      },
-      "required": ["uid", "role", "ownerParentId"]
-    },
-    "Jadwal": {
-      "title": "Jadwal",
-      "description": "Jadwal kegiatan",
-      "type": "object",
-      "properties": {
-        "idJadwal": { "type": "string" },
-        "namaAcara": { "type": "string" },
-        "status": { "type": "string" }
-      },
-      "required": ["idJadwal", "namaAcara"]
-    },
-    "BrandRegistry": {
-      "title": "BrandRegistry",
-      "description": "Indeks direktori pendaftaran brand multi-tenant",
-      "type": "object",
-      "properties": {
-        "slug": { "type": "string" },
-        "namaBrand": { "type": "string" },
+        "id": { "type": "string" },
         "ownerId": { "type": "string" },
-        "tier": { "type": "string" },
-        "status": { "type": "string" }
+        "namaLaundry": { "type": "string" },
+        "alamat": { "type": "string" },
+        "nomorTelepon": { "type": "string" }
       },
-      "required": ["slug", "namaBrand", "ownerId"]
+      "required": ["id", "ownerId", "namaLaundry"]
+    },
+    "LaundryTransaksi": {
+      "title": "LaundryTransaksi",
+      "description": "Dokumen transaksi pesanan laundry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "laundryId": { "type": "string" },
+        "nomorTransaksi": { "type": "string" },
+        "namaPelanggan": { "type": "string" },
+        "nomorTelepon": { "type": "string" },
+        "totalHarga": { "type": "number" },
+        "jumlahDp": { "type": "number" },
+        "status": { "type": "string" },
+        "statusPembayaran": { "type": "string" },
+        "tanggalMasuk": { "type": "number" },
+        "tanggalSelesai": { "type": "number" }
+      },
+      "required": ["id", "laundryId", "namaPelanggan", "totalHarga", "status", "statusPembayaran"]
+    },
+    "LaundryPelanggan": {
+      "title": "LaundryPelanggan",
+      "description": "Data pelanggan laundry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "laundryId": { "type": "string" },
+        "nama": { "type": "string" },
+        "nomorTelepon": { "type": "string" },
+        "poin": { "type": "number" }
+      },
+      "required": ["id", "laundryId", "nama"]
+    },
+    "LaundryLayanan": {
+      "title": "LaundryLayanan",
+      "description": "Daftar paket dan harga layanan laundry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "laundryId": { "type": "string" },
+        "nama": { "type": "string" },
+        "harga": { "type": "number" },
+        "satuanHarga": { "type": "string" },
+        "durasi": { "type": "string" }
+      },
+      "required": ["id", "laundryId", "nama", "harga"]
+    },
+    "LaundryPengeluaran": {
+      "title": "LaundryPengeluaran",
+      "description": "Catatan pengeluaran operasional toko",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "laundryId": { "type": "string" },
+        "tanggal": { "type": "number" },
+        "keterangan": { "type": "string" },
+        "jumlah": { "type": "number" }
+      },
+      "required": ["id", "laundryId", "keterangan", "jumlah"]
+    },
+    "LaundrySettings": {
+      "title": "LaundrySettings",
+      "description": "Pengaturan struk dan identitas laundry",
+      "type": "object",
+      "properties": {
+        "appTitle": { "type": "string" },
+        "headerStruk": { "type": "string" },
+        "address": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "useLogo": { "type": "boolean" },
+        "logoPath": { "type": "string" }
+      },
+      "required": ["appTitle"]
     }
   },
   "firestore": {
-    "/brands_registry/{slug}": {
-      "schema": "BrandRegistry",
-      "description": "Indeks direktori pendaftaran dan lisensi brand multi-tenant"
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Dokumen profil setiap user"
     },
-    "/owners/{ownerId}": {
-      "schema": "Owner",
-      "description": "Dokumen profil pemilik studio"
+    "/laundries/{laundryId}": {
+      "schema": "LaundryBranch",
+      "description": "Dokumen data cabang laundry"
     },
-    "/owners/{ownerId}/tim/{staffId}": {
-      "schema": "Staff",
-      "description": "Data anggota tim milik pemilik studio"
+    "/laundries/{laundryId}/transaksi/{transaksiId}": {
+      "schema": "LaundryTransaksi",
+      "description": "Sub-koleksi transaksi laundry"
     },
-    "/owners/{ownerId}/jadwal/{jadwalId}": {
-      "schema": "Jadwal",
-      "description": "Jadwal milik pemilik studio"
+    "/laundries/{laundryId}/pelanggan/{pelangganId}": {
+      "schema": "LaundryPelanggan",
+      "description": "Sub-koleksi pelanggan laundry"
     },
-    "/owners/{ownerId}/paket_layanan/{paketId}": {
-      "schema": "PaketLayanan",
-      "description": "Katalog paket layanan studio"
+    "/laundries/{laundryId}/layanan/{layananId}": {
+      "schema": "LaundryLayanan",
+      "description": "Sub-koleksi paket layanan laundry"
     },
-    "/owners/{ownerId}/galeri_web/{galeriId}": {
-      "schema": "GaleriWeb",
-      "description": "Galeri foto portofolio web studio"
+    "/laundries/{laundryId}/pengeluaran/{pengeluaranId}": {
+      "schema": "LaundryPengeluaran",
+      "description": "Sub-koleksi pengeluaran operasional"
     },
-    "/owners/{ownerId}/pengaturan/{pengaturanId}": {
-      "schema": "Pengaturan",
-      "description": "Pengaturan rekening dan konfigurasi studio"
-    },
-    "/owners/{ownerId}/arsip_kompresi/{arsipId}": {
-      "schema": "ArsipKompresi",
-      "description": "Arsip jadwal lama terkompresi"
-    },
-    "/tim_studio/{staffId}": {
-      "schema": "Staff",
-      "description": "Indeks peran staf untuk otorisasi cepat"
+    "/laundries/{laundryId}/settings/{settingId}": {
+      "schema": "LaundrySettings",
+      "description": "Sub-koleksi pengaturan cabang laundry"
     }
   }
 }

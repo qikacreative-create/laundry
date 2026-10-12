@@ -449,8 +449,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 const isEven = index % 2 === 0;
 
                 const serviceText =
-                  trx.items && trx.items.length > 0
-                    ? trx.items.map((it) => `${it.namaLayanan} (${it.berat} ${it.satuan})`).join(', ')
+                  Array.isArray(trx.items) && trx.items.length > 0
+                    ? trx.items.map((it) => `${it?.namaLayanan || 'Layanan'} (${it?.berat || 0} ${it?.satuan || ''})`).join(', ')
                     : 'Layanan Cuci';
 
                 return (
@@ -764,9 +764,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {trxToAmbil && (() => {
         const isLunas = trxToAmbil.statusPembayaran === 'Lunas';
         const sisa = Math.max(0, trxToAmbil.totalHarga - (trxToAmbil.jumlahDp || 0));
-        const servicesDesc = trxToAmbil.items && trxToAmbil.items.length > 0
-          ? trxToAmbil.items.map((it) => `${it.namaLayanan} (${it.berat} ${it.satuan})`).join(', ')
-          : 'Layanan Laundry';
+        const servicesDesc =
+          Array.isArray(trxToAmbil.items) && trxToAmbil.items.length > 0
+            ? trxToAmbil.items.map((it) => `${it?.namaLayanan || 'Layanan'} (${it?.berat || 0} ${it?.satuan || ''})`).join(', ')
+            : 'Layanan Laundry';
 
         return (
           <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">

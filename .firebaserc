@@ -1,14 +1,5 @@
 {
   "projects": {
-    "default": "kafilasuci3"
-  },
-  "targets": {
-    "kafilasuci3": {
-      "hosting": {
-        "kflsagnd": [
-          "kflsagnd"
-        ]
-      }
-    }
+    "default": "barokah-laundry-suci"
   }
 }
