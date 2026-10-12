@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#800000" />
+      <stop offset="100%" stop-color="#4a0000" />
+    </linearGradient>
+    <linearGradient id="door" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#e2e8f0" />
+    </linearGradient>
+    <linearGradient id="water" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Outer Rounded Background -->
+  <rect width="512" height="512" rx="108" fill="url(#bg)" />
+  
+  <!-- Washing Machine Body -->
+  <rect x="96" y="76" width="320" height="360" rx="36" fill="white" />
+  
+  <!-- Machine Top Control Panel -->
+  <rect x="96" y="76" width="320" height="84" rx="36" fill="#f1f5f9" />
+  <circle cx="150" cy="118" r="16" fill="#800000" />
+  <circle cx="196" cy="118" r="12" fill="#94a3b8" />
+  <circle cx="232" cy="118" r="12" fill="#94a3b8" />
+  
+  <!-- Display screen on control panel -->
+  <rect x="290" y="98" width="94" height="40" rx="8" fill="#1e293b" />
+  <text x="337" y="124" font-family="monospace" font-size="18" font-weight="bold" fill="#38bdf8" text-anchor="middle">00:45</text>
+  
+  <!-- Outer Drum Ring -->
+  <circle cx="256" cy="276" r="108" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="8" />
+  <circle cx="256" cy="276" r="92" fill="#334155" />
+  
+  <!-- Glass Window with Water Waves -->
+  <circle cx="256" cy="276" r="80" fill="url(#water)" />
+  <path d="M 186 280 Q 220 260 256 280 T 326 280 L 326 340 Q 290 356 256 356 T 186 340 Z" fill="#0369a1" opacity="0.8" />
+  
+  <!-- Detergent Foam Bubbles -->
+  <circle cx="226" cy="245" r="12" fill="white" opacity="0.85" />
+  <circle cx="256" cy="235" r="16" fill="white" opacity="0.9" />
+  <circle cx="286" cy="250" r="10" fill="white" opacity="0.85" />
+  
+  <!-- Sparkles / Pure Clean Star -->
+  <path d="M 400 90 L 406 110 L 426 116 L 406 122 L 400 142 L 394 122 L 374 116 L 394 110 Z" fill="#facc15" />
+</svg>
