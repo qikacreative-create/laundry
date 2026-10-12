@@ -2,8 +2,8 @@ import fs from 'fs';
 import zlib from 'zlib';
 
 function createPng(width, height, r, g, b) {
-  // Simple uncompressed or deflate PNG generator
-  const signature = Buffer.from([138, 80, 78, 71, 13, 10, 26, 10]);
+  // Standard PNG signature: 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n'
+  const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
   // IHDR chunk
   const ihdrData = Buffer.alloc(13);

@@ -8,14 +8,14 @@ interface ApkPlaystoreModalProps {
 }
 
 export const ApkPlaystoreModal: React.FC<ApkPlaystoreModalProps> = ({ isOpen, onClose }) => {
-  const { isInstallable, isInstalled, install, isIOS } = usePWAInstall();
+  const { isInstallable, isInstalled, install, isIOS, isInIframe } = usePWAInstall();
   const [activeTab, setActiveTab] = useState<'install' | 'playstore' | 'twa_config' | 'offline_safe'>('install');
   const [copiedText, setCopiedText] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const currentOrigin =
-    typeof window !== 'undefined' && window.location.origin.includes('kafelaslaundry')
+    typeof window !== 'undefined'
       ? window.location.origin
       : 'https://kafelaslaundry.web.app';
 
@@ -186,9 +186,9 @@ export const ApkPlaystoreModal: React.FC<ApkPlaystoreModalProps> = ({ isOpen, on
                 ) : isInstallable ? (
                   <button
                     onClick={install}
-                    className="inline-flex items-center gap-2 bg-[#800000] hover:bg-[#660000] text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-95"
+                    className="inline-flex items-center gap-2 bg-[#800000] hover:bg-[#660000] text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all active:scale-95 cursor-pointer"
                   >
-                    <Download className="w-4 h-4" />
+                    <Download className="w-4 h-4 animate-bounce" />
                     Pasang Sekarang di HP (1-Klik)
                   </button>
                 ) : isIOS ? (
@@ -201,8 +201,36 @@ export const ApkPlaystoreModal: React.FC<ApkPlaystoreModalProps> = ({ isOpen, on
                     </ol>
                   </div>
                 ) : (
-                  <div className="text-xs text-slate-500">
-                    Buka menu browser Anda (titik tiga di kanan atas) lalu pilih <strong>"Install app"</strong> atau <strong>"Tambahkan ke Layar Utama"</strong>.
+                  <div className="space-y-3 max-w-md mx-auto">
+                    {isInIframe ? (
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-left space-y-2 text-xs text-amber-900">
+                        <p className="font-bold">Buka di Browser Penuh untuk Pasang Langsung:</p>
+                        <p className="text-[11px] leading-relaxed text-amber-800">
+                          Jendela pratinjau membatasi fitur dialog pasang otomatis. Buka di tab penuh Google Chrome untuk mengaktifkan tombol 1-klik:
+                        </p>
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            onClick={() => window.open(window.location.href, '_blank')}
+                            className="flex-1 py-2 bg-[#800000] text-white font-bold rounded-lg text-xs hover:bg-[#660000] transition active:scale-95"
+                          >
+                            Buka di Tab Penuh Browser
+                          </button>
+                          <button
+                            onClick={() => copyToClipboard(window.location.href, 'pwa_link')}
+                            className="py-2 px-3 bg-white border border-amber-300 text-amber-900 font-bold rounded-lg text-xs hover:bg-amber-100 transition active:scale-95"
+                          >
+                            {copiedText === 'pwa_link' ? 'Tersalin!' : 'Salin URL'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-slate-600 bg-slate-100 p-3 rounded-xl border border-slate-200 text-left space-y-1">
+                        <p className="font-bold text-slate-800">Cara Pasang Cepat di Android (Chrome):</p>
+                        <p>1. Ketuk menu <strong>Titik Tiga (⋮)</strong> di pojok kanan atas browser.</p>
+                        <p>2. Pilih <strong>"Pasang aplikasi"</strong> atau <strong>"Tambahkan ke Layar Utama"</strong>.</p>
+                        <p>3. Aplikasi langsung muncul di menu HP Anda!</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

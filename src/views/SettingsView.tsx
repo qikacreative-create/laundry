@@ -18,6 +18,7 @@ import {
   Smartphone
 } from 'lucide-react';
 import { SettingsData, User, Laundry } from '../types';
+import { PWAInstallButton } from '../components/PWAInstallButton';
 
 interface SettingsViewProps {
   onBack: () => void;
@@ -284,6 +285,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             >
               Pengaturan Fitur & Kebijakan
             </button>
+          </div>
+
+          {/* SECTION 5: INSTALASI APLIKASI PWA & APK */}
+          <div className="space-y-1.5 pt-2">
+            <div className="text-[10px] font-bold text-white/70 uppercase tracking-wider">
+              INSTALASI & APLIKASI
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <PWAInstallButton variant="standalone" className="!bg-white !text-[#800000] hover:!bg-amber-50" />
+              <button
+                onClick={onOpenApkModal}
+                className="py-2.5 px-3 rounded-xl border border-white/30 hover:bg-white/10 text-xs font-bold text-left transition flex items-center justify-between"
+              >
+                <span>Panduan APK / TWA</span>
+                <Smartphone className="w-3.5 h-3.5 text-amber-300" />
+              </button>
+            </div>
           </div>
         </div>
       </main>

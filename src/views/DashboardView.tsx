@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { Transaksi, SettingsData, User, Laundry } from '../types';
 import { formatRupiah, formatShortDate, formatShortTime } from '../utils/formatters';
+import { PWAInstallButton } from '../components/PWAInstallButton';
 
 export type DashboardFilterStatus = 'semua' | 'selesai' | 'baru_masuk' | 'sedang_dikerjakan';
 
@@ -299,16 +300,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             )}
           </div>
 
-          {/* Tombol Kanan: APK Play Store & Settings */}
-          <div className="flex items-center gap-1">
-            <button
-              onClick={onOpenApkModal}
-              title="Unduh APK / Play Store"
-              className="px-2.5 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white flex items-center gap-1.5 text-xs font-bold border border-white/20 transition active:scale-95"
-            >
-              <Download className="w-3.5 h-3.5 text-amber-300" />
-              <span className="hidden sm:inline">Unduh APK</span>
-            </button>
+          {/* Tombol Kanan: Pasang PWA, APK Play Store & Settings */}
+          <div className="flex items-center gap-1.5">
+            <PWAInstallButton variant="header" />
+   
             <button
               onClick={onOpenSettings}
               title="Pengaturan"
@@ -323,6 +318,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* 2. AREA ATAS YANG BISA DI-SCROLL (Pencarian, Filter, Transaksi, Paginasi) */}
       <div className="flex-1 overflow-y-auto px-2 sm:px-4 md:px-6 py-2.5">
         <div className="max-w-7xl mx-auto w-full space-y-3 pb-2">
+          {/* PWA Install Banner */}
+          <PWAInstallButton variant="banner" />
+
           {/* Quick Primary Actions on PC */}
           <div className="hidden md:grid grid-cols-2 gap-2">
             <button
@@ -341,51 +339,46 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </button>
           </div>
 
-          {/* 2. PENCARIAN & 3 TOMBOL FILTER BERSEBELAHAN */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-2.5 sm:p-3 shadow-2xs space-y-2">
-            <div className="flex flex-col md:flex-row gap-2 items-stretch md:items-center">
-              {/* Kolom Pencarian */}
-              <div className="relative flex-1 min-w-[200px]">
+      {/* 2. PENCARIAN & 3 TOMBOL FILTER BERSEBELAHAN */}
+<div className="bg-white rounded-2xl border border-slate-200 p-2 sm:p-3 shadow-2xs">
+            {/* Selalu 2 kolom horizontal berdampingan di HP maupun PC */}
+            <div className="grid grid-cols-2 gap-1 items-center">
+              
+              {/* Kolom 1: Kolom Pencarian */}
+              <div className="relative w-full">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Cari nama pelanggan / no. nota (cth: 051026/1)..."
+                  placeholder="Cari pelanggan..."
                   className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 pl-9 pr-8 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white transition"
                 />
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 {searchQuery && (
                   <button
+                    type="button"
                     onClick={() => setSearchQuery('')}
-                    className="absolute right-3 top-2 text-xs text-slate-400 hover:text-slate-600 font-bold"
+                    className="absolute right-3 top-2 text-xs text-slate-400 hover:text-slate-600 font-bold cursor-pointer"
                   >
                     ✕
                   </button>
                 )}
               </div>
 
-              {/* 3 Tombol Filter di Samping Kolom Search */}
-              <div className="grid grid-cols-3 gap-1.5 shrink-0 md:w-auto">
-                {/* Tombol 1: Baru Masuk (Default Awal) */}
+              {/* Kolom 2: 3 Tombol Filter */}
+              <div className="grid grid-cols-3 gap-1 w-full">
+                {/* Tombol 1: Baru Masuk */}
                 <button
                   type="button"
                   onClick={() => setFilterStatus(filterStatus === 'baru_masuk' ? 'semua' : 'baru_masuk')}
-                  title={filterStatus === 'baru_masuk' ? 'Klik lagi untuk tampilkan semua' : 'Tampilkan pesanan baru masuk'}
-                  className={`py-2 px-2.5 sm:px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 ${
+                  className={`py-2 px-1 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition ${
                     filterStatus === 'baru_masuk'
                       ? 'bg-rose-700 text-white shadow-sm ring-2 ring-rose-300'
                       : 'bg-rose-50/80 hover:bg-rose-100 text-rose-800 border border-rose-200'
                   }`}
                 >
                   <Clock className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">Baru Masuk</span>
-                  <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                      filterStatus === 'baru_masuk'
-                        ? 'bg-white/25 text-white'
-                        : 'bg-rose-200 text-rose-900'
-                    }`}
-                  >
+                  <span className="text-[10px] px-1 rounded-full font-black bg-rose-200 text-rose-900">
                     {filterCounts.baruMasuk}
                   </span>
                 </button>
@@ -394,22 +387,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setFilterStatus(filterStatus === 'sedang_dikerjakan' ? 'semua' : 'sedang_dikerjakan')}
-                  title={filterStatus === 'sedang_dikerjakan' ? 'Klik lagi untuk tampilkan semua' : 'Tampilkan pesanan sedang dikerjakan'}
-                  className={`py-2 px-2.5 sm:px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 ${
+                  className={`py-2 px-1 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition ${
                     filterStatus === 'sedang_dikerjakan'
                       ? 'bg-amber-600 text-white shadow-sm ring-2 ring-amber-300'
                       : 'bg-amber-50/80 hover:bg-amber-100 text-amber-800 border border-amber-200'
                   }`}
                 >
                   <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">Dikerjakan</span>
-                  <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                      filterStatus === 'sedang_dikerjakan'
-                        ? 'bg-white/25 text-white'
-                        : 'bg-amber-200 text-amber-900'
-                    }`}
-                  >
+                  <span className="text-[10px] px-1 rounded-full font-black bg-amber-200 text-amber-900">
                     {filterCounts.sedangDikerjakan}
                   </span>
                 </button>
@@ -418,56 +403,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setFilterStatus(filterStatus === 'selesai' ? 'semua' : 'selesai')}
-                  title={filterStatus === 'selesai' ? 'Klik lagi untuk tampilkan semua' : 'Tampilkan pesanan selesai'}
-                  className={`py-2 px-2.5 sm:px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 ${
+                  className={`py-2 px-1 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition ${
                     filterStatus === 'selesai'
                       ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-300'
                       : 'bg-emerald-50/80 hover:bg-emerald-100 text-emerald-800 border border-emerald-200'
                   }`}
                 >
                   <CheckCircle className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">Selesai</span>
-                  <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                      filterStatus === 'selesai'
-                        ? 'bg-white/25 text-white'
-                        : 'bg-emerald-200 text-emerald-900'
-                    }`}
-                  >
+                  <span className="text-[10px] px-1 rounded-full font-black bg-emerald-200 text-emerald-900">
                     {filterCounts.selesai}
                   </span>
                 </button>
               </div>
-            </div>
 
-            {/* Filter Status Info & Reset */}
-            <div className="flex items-center justify-between px-1 text-[11px] text-slate-500 pt-0.5">
-              <div className="flex items-center gap-1.5">
-                <Filter className="w-3 h-3 text-[#800000]" />
-                <span>
-                  Filter aktif:{' '}
-                  <strong className="text-slate-800">
-                    {filterStatus === 'baru_masuk' && 'Pesanan Baru Masuk'}
-                    {filterStatus === 'sedang_dikerjakan' && 'Pesanan Sedang Dikerjakan'}
-                    {filterStatus === 'selesai' && 'Pesanan Selesai (Siap Diambil)'}
-                    {filterStatus === 'semua' && 'Semua Pesanan Aktif'}
-                  </strong>
-                </span>
-              </div>
-              {filterStatus !== 'semua' ? (
-                <button
-                  type="button"
-                  onClick={() => setFilterStatus('semua')}
-                  className="text-[11px] text-[#800000] font-bold hover:underline active:scale-95 transition"
-                >
-                  Tampilkan Semua ({filterCounts.semua})
-                </button>
-              ) : (
-                <span className="text-[10px] text-slate-400">Total: {filterCounts.semua} pesanan</span>
-              )}
             </div>
           </div>
 
+          
           {/* 4. DAFTAR TRANSAKSI AKTIF */}
           <main className="space-y-1">
             {displayedTrx.length === 0 ? (
@@ -666,29 +618,34 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="max-w-7xl mx-auto w-full">
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-3 space-y-2">
             {/* Header Ringkasan: Tanggal & User Login */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold text-slate-800 capitalize">
-                  {formattedToday}
-                </span>
-                <span className="text-[10px] font-semibold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md truncate max-w-[130px]">
-                  {currentUser.displayName}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsSummaryCollapsed(!isSummaryCollapsed)}
-                className="text-[10px] font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-slate-100 transition active:scale-95"
-                title={isSummaryCollapsed ? "Buka Rincian Lengkap" : "Sembunyikan / Perkecil"}
-              >
-                <span>{isSummaryCollapsed ? 'Buka' : 'Kecilkan'}</span>
-                {isSummaryCollapsed ? (
-                  <ChevronUp className="w-3.5 h-3.5 text-slate-600" />
-                ) : (
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-600" />
-                )}
-              </button>
-            </div>
+      <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+  {/* Sisi Kiri: Tanggal Hari Ini */}
+  <div className="flex items-center gap-2">
+    <span className="text-[11px] font-bold text-slate-800 capitalize">
+      {formattedToday}
+    </span>
+  </div>
+
+  {/* Sisi Kanan: Display Name di ujung kanan & Tombol Collapse */}
+  <div className="flex items-center gap-1.5">
+    <span className="text-[10px] font-semibold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md truncate max-w-[130px]">
+      {currentUser.displayName}
+    </span>
+
+    <button
+      type="button"
+      onClick={() => setIsSummaryCollapsed(!isSummaryCollapsed)}
+      className="text-[10px] font-bold text-slate-500 hover:text-slate-800 p-1 rounded hover:bg-slate-100 transition active:scale-95 flex items-center justify-center"
+      title={isSummaryCollapsed ? "Buka Rincian Lengkap" : "Sembunyikan / Perkecil"}
+    >
+      {isSummaryCollapsed ? (
+        <ChevronUp className="w-3.5 h-3.5 text-slate-600" />
+      ) : (
+        <ChevronDown className="w-3.5 h-3.5 text-slate-600" />
+      )}
+    </button>
+  </div>
+</div>
 
             {isSummaryCollapsed ? (
               <div className="flex items-center justify-between text-[11px] font-bold pt-0.5">
@@ -754,52 +711,54 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* 6. FLOATING ACTION BUTTON (+) TRANSAKSI BARU */}
-      <button
+    <button
         onClick={onOpenNewTransaksi}
         title="Buat Transaksi Baru"
-        className={`fixed ${isSummaryCollapsed ? 'bottom-20' : 'bottom-[205px]'} md:bottom-20 right-4 z-40 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#800000] hover:bg-[#660000] text-white shadow-xl flex items-center justify-center transition-all active:scale-90 border-2 border-white`}
+        className={`fixed ${isSummaryCollapsed ? 'bottom-5' : 'bottom-[20px]'} md:bottom-5 left-1/2 -translate-x-1/2 z-40 w-15 h-12 sm:w-17 sm:h-14 rounded-full bg-[#800000] hover:bg-[#660000] text-white shadow-xl flex items-center justify-center transition-all active:scale-90 border-2 border-white`}
       >
         <Plus className="w-7 h-7" />
       </button>
 
-      {/* 7. BOTTOM NAVIGATION BAR */}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-[#800000] text-white h-16 flex items-center justify-around px-2 shadow-2xl border-t border-white/10 pb-safe">
-        {/* Status Pengerjaan */}
-        <button
-          onClick={onOpenStatusPengerjaan}
-          className="flex flex-col items-center justify-center flex-1 py-1 hover:bg-white/10 rounded-xl transition text-[10px] active:scale-95"
-        >
-          <Clock className="w-5 h-5 mb-0.5" />
-          <span>Status</span>
-        </button>
+      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-[#800000] text-white h-14 flex items-center justify-around px-1 shadow-2xl border-t border-white/10 pb-safe">
+  {/* 1. Status Pengerjaan */}
+  <button
+    onClick={onOpenStatusPengerjaan}
+    className="flex flex-col items-center justify-center flex-1 py-1 hover:bg-white/10 rounded-xl transition text-[10px] active:scale-95"
+  >
+    <Clock className="w-5 h-5 mb-0.5" />
+    <span>Status</span>
+  </button>
 
-        {/* Keuangan (Buku Kas) */}
-        <button
-          onClick={onOpenBukuKas}
-          className="flex flex-col items-center justify-center flex-1 py-1 hover:bg-white/10 rounded-xl transition text-[10px] active:scale-95"
-        >
-          <DollarSign className="w-5 h-5 mb-0.5" />
-          <span>Keuangan</span>
-        </button>
+  {/* 2. Keuangan (Buku Kas) */}
+  <button
+    onClick={onOpenBukuKas}
+    className="flex flex-col items-center justify-center flex-1 py-1 hover:bg-white/10 rounded-xl transition text-[10px] active:scale-95"
+  >
+    <DollarSign className="w-5 h-5 mb-0.5" />
+    <span>Keuangan</span>
+  </button>
 
-        {/* Catat (Pengeluaran / Pemasukan Kas) */}
-        <button
-          onClick={onOpenAturKas}
-          className="flex flex-col items-center justify-center flex-1 py-1 hover:bg-white/10 rounded-xl transition text-[10px] active:scale-95"
-        >
-          <Plus className="w-5 h-5 mb-0.5" />
-          <span>Catat Kas</span>
-        </button>
+  {/* 3. KOSONG DI TENGAH (Spacer / Ruang Kosong) */}
+  <div className="flex-1 h-full pointer-events-none" aria-hidden="true" />
 
-        {/* Laporan Bulanan */}
-        <button
-          onClick={onOpenLaporan}
-          className="flex flex-col items-center justify-center flex-1 py-1 hover:bg-white/10 rounded-xl transition text-[10px] active:scale-95"
-        >
-          <FileText className="w-5 h-5 mb-0.5" />
-          <span>Laporan</span>
-        </button>
-      </nav>
+  {/* 4. Catat (Pengeluaran / Pemasukan Kas) */}
+  <button
+    onClick={onOpenAturKas}
+    className="flex flex-col items-center justify-center flex-1 py-1 hover:bg-white/10 rounded-xl transition text-[10px] active:scale-95"
+  >
+    <Plus className="w-5 h-5 mb-0.5" />
+    <span>Catat Kas</span>
+  </button>
+
+  {/* 5. Laporan Bulanan */}
+  <button
+    onClick={onOpenLaporan}
+    className="flex flex-col items-center justify-center flex-1 py-1 hover:bg-white/10 rounded-xl transition text-[10px] active:scale-95"
+  >
+    <FileText className="w-5 h-5 mb-0.5" />
+    <span>Laporan</span>
+  </button>
+</nav>
 
       {/* MODAL KONFIRMASI PENGAMBILAN TRANSAKSI ("Benar mau diambil?") */}
       {trxToAmbil && (() => {
