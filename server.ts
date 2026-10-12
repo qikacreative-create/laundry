@@ -1,6 +1,5 @@
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
-import axios from 'axios';
 
 async function startServer() {
   const app = express();
@@ -14,10 +13,14 @@ async function startServer() {
     }
 
     try {
-      const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-      const buffer = Buffer.from(response.data, 'binary');
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        return res.status(response.status).send('Failed to fetch image');
+      }
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
       const base64 = buffer.toString('base64');
-      const contentType = response.headers['content-type'];
+      const contentType = response.headers.get('content-type') || 'image/png';
       res.send(`data:${contentType};base64,${base64}`);
     } catch (error) {
       console.error('Proxy image error:', error);

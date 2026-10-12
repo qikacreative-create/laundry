@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Printer, Share2, MessageCircle, Edit3, Trash2, CheckCircle2, Clock } from 'lucide-react';
+import { ArrowLeft, Printer, Share2, MessageCircle, Edit3, Trash2, CheckCircle2, Clock, Truck, AlertCircle, CheckCircle } from 'lucide-react';
 import { Transaksi, SettingsData, Pelanggan, User } from '../types';
 import { formatRupiah, formatDateIndo } from '../utils/formatters';
 import { ReceiptModal } from '../components/ReceiptModal';
@@ -12,6 +12,7 @@ interface DetailTransaksiViewProps {
   pelanggan?: Pelanggan | null;
   onEdit: (transaksi: Transaksi) => void;
   onDelete: (transaksiId: string) => void;
+  onAmbil?: (transaksi: Transaksi) => void;
 }
 
 export const DetailTransaksiView: React.FC<DetailTransaksiViewProps> = ({
@@ -22,8 +23,10 @@ export const DetailTransaksiView: React.FC<DetailTransaksiViewProps> = ({
   pelanggan,
   onEdit,
   onDelete,
+  onAmbil,
 }) => {
   const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [showConfirmAmbil, setShowConfirmAmbil] = useState(false);
 
   const isOwner = currentUser.role === 'owner';
   const isLunas = transaksi.statusPembayaran === 'Lunas';
@@ -210,7 +213,17 @@ export const DetailTransaksiView: React.FC<DetailTransaksiViewProps> = ({
           </button>
         </div>
 
-    
+        {/* Tombol Ambil Cucian jika belum diambil */}
+        {!isArchived && onAmbil && (
+          <button
+            onClick={() => setShowConfirmAmbil(true)}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition active:scale-98"
+          >
+            <Truck className="w-4 h-4" />
+            <span>Ambil Cucian (Serahkan ke Pelanggan)</span>
+          </button>
+        )}
+
         {/* Edit & Delete Buttons for Owner */}
         {isOwner && !isArchived && (
           <div className="flex gap-2 pt-1">
@@ -240,6 +253,95 @@ export const DetailTransaksiView: React.FC<DetailTransaksiViewProps> = ({
         settings={settings}
         pelanggan={pelanggan}
       />
+
+      {/* MODAL KONFIRMASI PENGAMBILAN TRANSAKSI ("Benar mau diambil?") */}
+      {showConfirmAmbil && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto mb-3 shadow-xs">
+              <Truck className="w-7 h-7" />
+            </div>
+
+            <h3 className="text-lg font-black text-slate-900 text-center tracking-tight">
+              Benar mau diambil?
+            </h3>
+            <p className="text-xs text-slate-500 text-center mt-1">
+              Konfirmasi penyerahan cucian ke pelanggan
+            </p>
+
+            <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200 mt-4 space-y-2 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Pelanggan:</span>
+                <span className="font-bold text-slate-900 truncate max-w-[190px]">
+                  {transaksi.namaPelanggan}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">No. Nota / Faktur:</span>
+                <span className="font-mono font-bold text-slate-700">
+                  {transaksi.nomorTransaksi || '-'}
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-1.5 border-t border-slate-200">
+                <span className="text-slate-500 font-semibold">Total Tagihan:</span>
+                <span className="font-extrabold text-slate-900 text-sm">
+                  {formatRupiah(transaksi.totalHarga)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center pt-1 border-t border-dashed border-slate-200">
+                <span className="text-slate-500">Status Pembayaran:</span>
+                {isLunas || sisaBayar <= 0 ? (
+                  <span className="px-2 py-0.5 rounded-full font-black bg-emerald-100 text-emerald-800 text-[11px]">
+                    LUNAS
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full font-black bg-rose-100 text-rose-800 text-[11px]">
+                    SISA {formatRupiah(sisaBayar)}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {!isLunas && sisaBayar > 0 ? (
+              <div className="mt-3.5 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div className="leading-relaxed">
+                  Masih terdapat sisa tagihan sebesar <strong className="font-bold text-rose-700">{formatRupiah(sisaBayar)}</strong>.
+                  Menekan <strong>"Ya, Benar Diambil"</strong> akan otomatis menandai transaksi ini <strong>LUNAS</strong> dan diserahkan.
+                </div>
+              </div>
+            ) : (
+              <div className="mt-3.5 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 text-xs flex items-start gap-2.5">
+                <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div className="leading-relaxed">
+                  Cucian sudah lunas dan siap diserahkan kepada pelanggan.
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-2.5 mt-5">
+              <button
+                type="button"
+                onClick={() => setShowConfirmAmbil(false)}
+                className="py-2.5 px-4 rounded-xl border border-slate-300 hover:bg-slate-100 font-bold text-xs text-slate-700 transition active:scale-95"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowConfirmAmbil(false);
+                  onAmbil?.(transaksi);
+                }}
+                className="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 font-black text-xs text-white shadow-md transition active:scale-95 flex items-center justify-center gap-1.5"
+              >
+                <Truck className="w-4 h-4" />
+                <span>Ya, Benar Diambil</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

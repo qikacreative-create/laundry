@@ -80,8 +80,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onAmbilTransaksi,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState<DashboardFilterStatus>('semua');
+  // 3 Tombol Filter: Default awal menampilkan semua transaksi baru masuk
+  const [filterStatus, setFilterStatus] = useState<DashboardFilterStatus>('baru_masuk');
   const [isSummaryCollapsed, setIsSummaryCollapsed] = useState(false);
+  const [trxToAmbil, setTrxToAmbil] = useState<Transaksi | null>(null);
 
   // Filter transactions for active branch (exclude archived/picked-up)
   const activeBranchTrx = useMemo(() => {
@@ -339,142 +341,130 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </button>
           </div>
 
-          {/* 2. PENCARIAN TRANSAKSI */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-2xs">
-          
-            <div className="relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari nama pelanggan / no. nota (cth: 051026/1)..."
-                className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2.5 pl-10 pr-8 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white transition"
-              />
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-600 font-bold"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* 3. FILTER TABS: PESANAN SELESAI, BARU MASUK, SEDANG DIKERJAKAN, SEMUA (Khusus Layar PC/Tablet, disembunyikan untuk HP) */}
-          <div className={`${isMobile ? 'hidden' : 'hidden md:block'} bg-white rounded-2xl border border-slate-200 p-2 shadow-2xs`}>
-            <div className="flex items-center justify-between px-1 pb-1.5">
-              <div className="flex items-center gap-1 text-[11px] font-bold text-slate-600">
-                <Filter className="w-3.5 h-3.5 text-[#800000]" />
-                <span>Filter Pesanan:</span>
+          {/* 2. PENCARIAN & 3 TOMBOL FILTER BERSEBELAHAN */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-2.5 sm:p-3 shadow-2xs space-y-2">
+            <div className="flex flex-col md:flex-row gap-2 items-stretch md:items-center">
+              {/* Kolom Pencarian */}
+              <div className="relative flex-1 min-w-[200px]">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cari nama pelanggan / no. nota (cth: 051026/1)..."
+                  className="w-full bg-slate-50 border border-slate-300 rounded-xl py-2 pl-9 pr-8 text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#800000] focus:bg-white transition"
+                />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-2 text-xs text-slate-400 hover:text-slate-600 font-bold"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
-              <span className="text-[10px] text-slate-400">
-                {filterStatus === 'semua' && 'Semua Pesanan Aktif'}
-                {filterStatus === 'selesai' && 'Hanya Pesanan Selesai'}
-                {filterStatus === 'baru_masuk' && 'Pesanan Baru Masuk'}
-                {filterStatus === 'sedang_dikerjakan' && 'Sedang Dikerjakan'}
-              </span>
+
+              {/* 3 Tombol Filter di Samping Kolom Search */}
+              <div className="grid grid-cols-3 gap-1.5 shrink-0 md:w-auto">
+                {/* Tombol 1: Baru Masuk (Default Awal) */}
+                <button
+                  type="button"
+                  onClick={() => setFilterStatus(filterStatus === 'baru_masuk' ? 'semua' : 'baru_masuk')}
+                  title={filterStatus === 'baru_masuk' ? 'Klik lagi untuk tampilkan semua' : 'Tampilkan pesanan baru masuk'}
+                  className={`py-2 px-2.5 sm:px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 ${
+                    filterStatus === 'baru_masuk'
+                      ? 'bg-rose-700 text-white shadow-sm ring-2 ring-rose-300'
+                      : 'bg-rose-50/80 hover:bg-rose-100 text-rose-800 border border-rose-200'
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Baru Masuk</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                      filterStatus === 'baru_masuk'
+                        ? 'bg-white/25 text-white'
+                        : 'bg-rose-200 text-rose-900'
+                    }`}
+                  >
+                    {filterCounts.baruMasuk}
+                  </span>
+                </button>
+
+                {/* Tombol 2: Sedang Dikerjakan */}
+                <button
+                  type="button"
+                  onClick={() => setFilterStatus(filterStatus === 'sedang_dikerjakan' ? 'semua' : 'sedang_dikerjakan')}
+                  title={filterStatus === 'sedang_dikerjakan' ? 'Klik lagi untuk tampilkan semua' : 'Tampilkan pesanan sedang dikerjakan'}
+                  className={`py-2 px-2.5 sm:px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 ${
+                    filterStatus === 'sedang_dikerjakan'
+                      ? 'bg-amber-600 text-white shadow-sm ring-2 ring-amber-300'
+                      : 'bg-amber-50/80 hover:bg-amber-100 text-amber-800 border border-amber-200'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Dikerjakan</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                      filterStatus === 'sedang_dikerjakan'
+                        ? 'bg-white/25 text-white'
+                        : 'bg-amber-200 text-amber-900'
+                    }`}
+                  >
+                    {filterCounts.sedangDikerjakan}
+                  </span>
+                </button>
+
+                {/* Tombol 3: Selesai */}
+                <button
+                  type="button"
+                  onClick={() => setFilterStatus(filterStatus === 'selesai' ? 'semua' : 'selesai')}
+                  title={filterStatus === 'selesai' ? 'Klik lagi untuk tampilkan semua' : 'Tampilkan pesanan selesai'}
+                  className={`py-2 px-2.5 sm:px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 ${
+                    filterStatus === 'selesai'
+                      ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-300'
+                      : 'bg-emerald-50/80 hover:bg-emerald-100 text-emerald-800 border border-emerald-200'
+                  }`}
+                >
+                  <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Selesai</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                      filterStatus === 'selesai'
+                        ? 'bg-white/25 text-white'
+                        : 'bg-emerald-200 text-emerald-900'
+                    }`}
+                  >
+                    {filterCounts.selesai}
+                  </span>
+                </button>
+              </div>
             </div>
 
-            {/* Filter Buttons Segmented Bar */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-              {/* Tab 1: Pesanan Selesai */}
-              <button
-                type="button"
-                onClick={() => setFilterStatus('selesai')}
-                className={`py-2 px-2.5 rounded-xl font-bold text-xs flex items-center justify-between transition active:scale-98 ${
-                  filterStatus === 'selesai'
-                    ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-300'
-                    : 'bg-emerald-50/70 hover:bg-emerald-100/70 text-emerald-800 border border-emerald-200/60'
-                }`}
-              >
-                <span className="truncate flex items-center gap-1.5">
-                  <CheckCircle className="w-3.5 h-3.5 shrink-0" />
-                  <span>Selesai</span>
+            {/* Filter Status Info & Reset */}
+            <div className="flex items-center justify-between px-1 text-[11px] text-slate-500 pt-0.5">
+              <div className="flex items-center gap-1.5">
+                <Filter className="w-3 h-3 text-[#800000]" />
+                <span>
+                  Filter aktif:{' '}
+                  <strong className="text-slate-800">
+                    {filterStatus === 'baru_masuk' && 'Pesanan Baru Masuk'}
+                    {filterStatus === 'sedang_dikerjakan' && 'Pesanan Sedang Dikerjakan'}
+                    {filterStatus === 'selesai' && 'Pesanan Selesai (Siap Diambil)'}
+                    {filterStatus === 'semua' && 'Semua Pesanan Aktif'}
+                  </strong>
                 </span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${
-                    filterStatus === 'selesai'
-                      ? 'bg-white/25 text-white'
-                      : 'bg-emerald-200 text-emerald-900'
-                  }`}
+              </div>
+              {filterStatus !== 'semua' ? (
+                <button
+                  type="button"
+                  onClick={() => setFilterStatus('semua')}
+                  className="text-[11px] text-[#800000] font-bold hover:underline active:scale-95 transition"
                 >
-                  {filterCounts.selesai}
-                </span>
-              </button>
-
-              {/* Tab 2: Pesanan Baru Masuk */}
-              <button
-                type="button"
-                onClick={() => setFilterStatus('baru_masuk')}
-                className={`py-2 px-2.5 rounded-xl font-bold text-xs flex items-center justify-between transition active:scale-98 ${
-                  filterStatus === 'baru_masuk'
-                    ? 'bg-rose-700 text-white shadow-sm ring-2 ring-rose-300'
-                    : 'bg-rose-50/70 hover:bg-rose-100/70 text-rose-800 border border-rose-200/60'
-                }`}
-              >
-                <span className="truncate flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 shrink-0" />
-                  <span>Baru Masuk</span>
-                </span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${
-                    filterStatus === 'baru_masuk'
-                      ? 'bg-white/25 text-white'
-                      : 'bg-rose-200 text-rose-900'
-                  }`}
-                >
-                  {filterCounts.baruMasuk}
-                </span>
-              </button>
-
-              {/* Tab 3: Pesanan Sedang Dikerjakan */}
-              <button
-                type="button"
-                onClick={() => setFilterStatus('sedang_dikerjakan')}
-                className={`py-2 px-2.5 rounded-xl font-bold text-xs flex items-center justify-between transition active:scale-98 ${
-                  filterStatus === 'sedang_dikerjakan'
-                    ? 'bg-amber-600 text-white shadow-sm ring-2 ring-amber-300'
-                    : 'bg-amber-50/70 hover:bg-amber-100/70 text-amber-800 border border-amber-200/60'
-                }`}
-              >
-                <span className="truncate flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
-                  <span>Dikerjakan</span>
-                </span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${
-                    filterStatus === 'sedang_dikerjakan'
-                      ? 'bg-white/25 text-white'
-                      : 'bg-amber-200 text-amber-900'
-                  }`}
-                >
-                  {filterCounts.sedangDikerjakan}
-                </span>
-              </button>
-
-              {/* Tab 4: Semua Pesanan */}
-              <button
-                type="button"
-                onClick={() => setFilterStatus('semua')}
-                className={`py-2 px-2.5 rounded-xl font-bold text-xs flex items-center justify-between transition active:scale-98 ${
-                  filterStatus === 'semua'
-                    ? 'bg-slate-800 text-white shadow-sm ring-2 ring-slate-400'
-                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
-                }`}
-              >
-                <span className="truncate">Semua</span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${
-                    filterStatus === 'semua'
-                      ? 'bg-white/25 text-white'
-                      : 'bg-slate-200 text-slate-700'
-                  }`}
-                >
-                  {filterCounts.semua}
-                </span>
-              </button>
+                  Tampilkan Semua ({filterCounts.semua})
+                </button>
+              ) : (
+                <span className="text-[10px] text-slate-400">Total: {filterCounts.semua} pesanan</span>
+              )}
             </div>
           </div>
 
@@ -587,7 +577,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     ) : (
       <button
         type="button"
-        onClick={() => onAmbilTransaksi(trx)}
+        onClick={() => setTrxToAmbil(trx)}
         title="Ambil / Serahkan ke Pelanggan"
         className="w-10 min-h-[20px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white flex flex-col items-center justify-center gap-1 shadow-2xs active:scale-95 transition"
       >
@@ -810,6 +800,114 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <span>Laporan</span>
         </button>
       </nav>
+
+      {/* MODAL KONFIRMASI PENGAMBILAN TRANSAKSI ("Benar mau diambil?") */}
+      {trxToAmbil && (() => {
+        const isLunas = trxToAmbil.statusPembayaran === 'Lunas';
+        const sisa = Math.max(0, trxToAmbil.totalHarga - (trxToAmbil.jumlahDp || 0));
+        const servicesDesc = trxToAmbil.items && trxToAmbil.items.length > 0
+          ? trxToAmbil.items.map((it) => `${it.namaLayanan} (${it.berat} ${it.satuan})`).join(', ')
+          : 'Layanan Laundry';
+
+        return (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+            <div className="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+              {/* Header Icon */}
+              <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto mb-3 shadow-xs">
+                <Truck className="w-7 h-7" />
+              </div>
+
+              {/* Title & Pertanyaan Utama */}
+              <h3 className="text-lg font-black text-slate-900 text-center tracking-tight">
+                Benar mau diambil?
+              </h3>
+              <p className="text-xs text-slate-500 text-center mt-1">
+                Konfirmasi penyerahan cucian ke pelanggan
+              </p>
+
+              {/* Rincian Transaksi */}
+              <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200 mt-4 space-y-2 text-xs">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Pelanggan:</span>
+                  <span className="font-bold text-slate-900 truncate max-w-[190px]">
+                    {trxToAmbil.namaPelanggan}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">No. Nota / Faktur:</span>
+                  <span className="font-mono font-bold text-slate-700">
+                    {trxToAmbil.nomorTransaksi || '-'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-start gap-2">
+                  <span className="text-slate-500 shrink-0">Layanan:</span>
+                  <span className="text-slate-800 font-medium text-right line-clamp-2">
+                    {servicesDesc}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-1.5 border-t border-slate-200">
+                  <span className="text-slate-500 font-semibold">Total Tagihan:</span>
+                  <span className="font-extrabold text-slate-900 text-sm">
+                    {formatRupiah(trxToAmbil.totalHarga)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-1 border-t border-dashed border-slate-200">
+                  <span className="text-slate-500">Status Pembayaran:</span>
+                  {isLunas || sisa <= 0 ? (
+                    <span className="px-2 py-0.5 rounded-full font-black bg-emerald-100 text-emerald-800 text-[11px]">
+                      LUNAS
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-full font-black bg-rose-100 text-rose-800 text-[11px]">
+                      SISA {formatRupiah(sisa)}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Catatan Sisa Pembayaran / Pelunasan */}
+              {!isLunas && sisa > 0 ? (
+                <div className="mt-3.5 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs flex items-start gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="leading-relaxed">
+                    Masih terdapat sisa tagihan sebesar <strong className="font-bold text-rose-700">{formatRupiah(sisa)}</strong>.
+                    Jika Anda konfirmasi <strong>"Ya, Benar Diambil"</strong>, transaksi ini otomatis ditandai <strong>LUNAS</strong> dan diserahkan.
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-3.5 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 text-xs flex items-start gap-2.5">
+                  <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div className="leading-relaxed">
+                    Cucian sudah lunas dan siap diserahkan kepada pelanggan. Data akan otomatis masuk ke arsip cucian selesai diambil.
+                  </div>
+                </div>
+              )}
+
+              {/* Tombol Aksi */}
+              <div className="grid grid-cols-2 gap-2.5 mt-5">
+                <button
+                  type="button"
+                  onClick={() => setTrxToAmbil(null)}
+                  className="py-2.5 px-4 rounded-xl border border-slate-300 hover:bg-slate-100 font-bold text-xs text-slate-700 transition active:scale-95"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onAmbilTransaksi(trxToAmbil);
+                    setTrxToAmbil(null);
+                  }}
+                  className="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 font-black text-xs text-white shadow-md transition active:scale-95 flex items-center justify-center gap-1.5"
+                >
+                  <Truck className="w-4 h-4" />
+                  <span>Ya, Benar Diambil</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

@@ -239,6 +239,18 @@ export default function App() {
     setActiveView('dashboard');
   };
 
+  const handleAmbilTransaksi = (trx: Transaksi) => {
+    const updated = {
+      ...trx,
+      status: 'Diambil' as const,
+      statusPembayaran: 'Lunas' as const,
+      tanggalPengambilan: Date.now(),
+    };
+    updateTransaksiList(
+      transaksiList.map((t) => (t.id === trx.id ? updated : t))
+    );
+  };
+
   const handleSaveCustomer = (cust: Pelanggan) => {
     const exists = pelangganList.some((p) => p.id === cust.id);
     const updated = exists
@@ -479,37 +491,7 @@ export default function App() {
                 );
               }
             }}
-            onAmbilTransaksi={(trx) => {
-              const sisa = Math.max(0, trx.totalHarga - trx.jumlahDp);
-              if (sisa > 0) {
-                if (
-                  confirm(
-                    `Transaksi ini memiliki sisa Rp ${sisa.toLocaleString(
-                      'id-ID'
-                    )}. Tandai lunas dan serahkan pakaian ke pelanggan?`
-                  )
-                ) {
-                  const updated = {
-                    ...trx,
-                    status: 'Diambil' as const,
-                    statusPembayaran: 'Lunas' as const,
-                    tanggalPengambilan: Date.now(),
-                  };
-                  updateTransaksiList(
-                    transaksiList.map((t) => (t.id === trx.id ? updated : t))
-                  );
-                }
-              } else {
-                const updated = {
-                  ...trx,
-                  status: 'Diambil' as const,
-                  tanggalPengambilan: Date.now(),
-                };
-                updateTransaksiList(
-                  transaksiList.map((t) => (t.id === trx.id ? updated : t))
-                );
-              }
-            }}
+            onAmbilTransaksi={handleAmbilTransaksi}
           />
         )}
 
@@ -541,6 +523,10 @@ export default function App() {
               setActiveView('tambah_edit');
             }}
             onDelete={handleDeleteTransaction}
+            onAmbil={(trx) => {
+              handleAmbilTransaksi(trx);
+              setActiveView('dashboard');
+            }}
           />
         )}
 
