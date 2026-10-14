@@ -168,10 +168,8 @@ export const KelolaOwnerView: React.FC<KelolaOwnerViewProps> = ({
           </div>
 
           {/* Perpanjangan Options */}
-          <div className="p-4 space-y-3">
-            <div className="text-[11px] font-bold text-slate-400 tracking-wider uppercase">
-              Pilihan Perpanjangan Langganan:
-            </div>
+          <div className="p-1 space-y-3">
+         
 
             {/* Bulanan */}
             <div className="flex items-center justify-between p-3 rounded-xl bg-slate-800/80 border border-slate-700">
@@ -320,16 +318,6 @@ export const KelolaOwnerView: React.FC<KelolaOwnerViewProps> = ({
               💬 Bantuan CS
             </button>
           </div>
-
-          <button
-            onClick={() => {
-              window.open('https://www.youtube.com/watch?v=Dx0IYn8e7bw', '_blank');
-            }}
-            className="w-full py-2.5 rounded-xl bg-[#800000] hover:bg-[#660000] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-xs transition"
-          >
-            <Video className="w-4 h-4" />
-            <span>▶ Panduan Video Tutorial Kasir</span>
-          </button>
         </div>
       </main>
 

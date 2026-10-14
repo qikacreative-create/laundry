@@ -15,9 +15,14 @@ import {
   ChevronRight,
   ShieldCheck,
   Sparkles,
+  Calendar,
+  CreditCard,
+  Clock,
 } from 'lucide-react';
 import { SettingsData, User, Laundry } from '../types';
 import { PWAInstallButton } from '../components/PWAInstallButton';
+import { formatDateIndo } from '../utils/formatters';
+import { StorageService, defaultOwnerUser } from '../utils/storage';
 
 interface SettingsViewProps {
   onBack: () => void;
@@ -47,6 +52,21 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onLogout,
 }) => {
   const isOwner = currentUser.role === 'owner';
+
+  // Perhitungan Sisa Masa Aktif Langganan
+  const ownerUser = StorageService.get<User[]>('users', []).find((u) => u.role === 'owner') || defaultOwnerUser;
+  const effectiveEndDate =
+    currentUser.subscriptionEndDate ||
+    (currentUser.role !== 'owner' ? ownerUser?.subscriptionEndDate : undefined) ||
+    defaultOwnerUser.subscriptionEndDate ||
+    Date.now();
+
+  const sisaHari = Math.max(
+    0,
+    Math.ceil((effectiveEndDate - Date.now()) / (1000 * 60 * 60 * 24))
+  );
+
+  const tanggalBerakhirStr = formatDateIndo(effectiveEndDate);
 
   // Sub-dialog states
   const [showInfoStrukModal, setShowInfoStrukModal] = useState(false);
@@ -158,31 +178,95 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* 2. MAIN SCROLL CONTAINER */}
       <main className="flex-1 p-3.5 sm:p-5 space-y-4 overflow-y-auto max-w-xl md:max-w-2xl mx-auto w-full">
         {/* Brand Profile & Subscription Banner */}
-        <div className="bg-gradient-to-br from-[#800000] to-[#590000] text-white rounded-2xl p-4 shadow-sm space-y-3">
+        <div className="bg-gradient-to-br from-[#800000] to-[#590000] text-white rounded-2xl p-4 shadow-sm space-y-3.5">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-base sm:text-lg font-black truncate">{activeLaundry.namaLaundry}</span>
-                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-bold flex items-center gap-1 shrink-0">
+                <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold flex items-center gap-1 shrink-0 ${
+                  sisaHari > 0
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30'
+                    : 'bg-rose-500/30 text-rose-200 border-rose-400/30'
+                }`}>
                   <ShieldCheck className="w-3 h-3 text-emerald-300" />
-                  Aktif
+                  {sisaHari > 0 ? 'Aktif' : 'Habis'}
                 </span>
               </div>
               <p className="text-xs text-white/80 mt-0.5 truncate">
-                Owner: {currentUser.displayName || 'Pemilik'} • {activeLaundry.nomorTelepon || settings.phoneNumber || 'Tanpa No. HP'}
+                {currentUser.role === 'owner' ? 'Owner' : 'Kasir'}: {currentUser.username || currentUser.displayName || 'Pengguna'} • {activeLaundry.nomorTelepon || settings.phoneNumber || 'Tanpa No. HP'}
               </p>
             </div>
             {isOwner && (
               <button
                 type="button"
                 onClick={onOpenKelolaOwner}
-                className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/30 text-white font-bold text-xs shrink-0 transition active:scale-95"
+                className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/30 text-white font-bold text-xs shrink-0 transition active:scale-95 cursor-pointer"
               >
                 Langganan
               </button>
             )}
           </div>
 
+        
+        </div>
+
+        {/* KARTU RINCIAN SISA MASA AKTIF LANGGANAN */}
+        <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-slate-900 font-bold text-xs">
+              <Sparkles className="w-4 h-4 text-amber-500" />
+              <span>Status Paket & Masa Aktif</span>
+            </div>
+            <span className="px-2 py-0.5 rounded-full bg-rose-50 text-[#800000] border border-rose-200 text-[10px] font-bold capitalize">
+              {currentUser.subscriptionType || 'Paket Bulanan'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
+                  Sisa Langganan
+                </span>
+                <div className="text-xl font-black text-[#800000] mt-0.5">
+                  {sisaHari} <span className="text-xs font-bold text-slate-600">Hari</span>
+                </div>
+              </div>
+              <div className="text-[10px] text-slate-500 mt-1 flex items-center gap-1">
+                <Clock className="w-3 h-3 text-slate-400" />
+                <span>{sisaHari > 5 ? 'Masa aktif normal' : sisaHari > 0 ? 'Mendekati habis' : 'Kedaluwarsa'}</span>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col justify-between">
+              <div>
+                <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
+                  Berlaku Sampai
+                </span>
+                <div className="text-xs font-bold text-slate-800 mt-1 leading-snug">
+                  {tanggalBerakhirStr}
+                </div>
+              </div>
+              <div className="text-[10px] text-slate-400 mt-1">
+                Pukul 23:59 WIB
+              </div>
+            </div>
+          </div>
+
+          {isOwner ? (
+            <button
+              type="button"
+              onClick={onOpenKelolaOwner}
+              className="w-full py-2.5 px-3 rounded-xl bg-[#800000] hover:bg-[#660000] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition active:scale-98 cursor-pointer"
+            >
+              <CreditCard className="w-3.5 h-3.5" />
+              <span>Perpanjang / Kelola Paket Langganan</span>
+            </button>
+          ) : (
+            <div className="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-200/80 text-center">
+              Perpanjangan masa aktif hanya dapat dilakukan oleh akun Owner.
+            </div>
+          )}
         </div>
 
         {/* SECTION 1: MANAJEMEN OUTLET & KASIR (Owner Only) */}

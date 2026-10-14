@@ -1080,58 +1080,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {/* PWA Install Banner */}
               <PWAInstallButton variant="banner" />
 
-              {/* Status Langganan & Masa Aktif di HP */}
-              <div
-                onClick={onOpenKelolaOwner}
-                className="p-2.5 sm:p-3 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-amber-500/5 border border-amber-300/80 shadow-2xs flex items-center justify-between gap-2.5 cursor-pointer active:scale-98 transition"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-2xs ${
-                      isExpired
-                        ? 'bg-red-600 text-white'
-                        : isExpiringSoon
-                        ? 'bg-amber-500 text-white animate-pulse'
-                        : 'bg-amber-500 text-white'
-                    }`}
-                  >
-                    <Crown className="w-4 h-4 stroke-[2.3]" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-black text-xs text-slate-900 truncate">
-                        {paketNama}
-                      </span>
-                      <span
-                        className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                          isExpired
-                            ? 'bg-red-200 text-red-900'
-                            : isExpiringSoon
-                            ? 'bg-amber-200 text-amber-950 animate-pulse'
-                            : 'bg-amber-200 text-amber-950'
-                        }`}
-                      >
-                        {isExpired ? 'Kadaluarsa' : `${sisaHari} Hari Lagi`}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-slate-600 truncate mt-0.5">
-                      Berlaku s/d {formatTanggalKadaluarsa} • {laundries.length} Cabang
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenKelolaOwner();
-                  }}
-                  className="px-2.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-[11px] shadow-2xs flex items-center gap-1 shrink-0 transition active:scale-95"
-                >
-                  <span>Kelola</span>
-                  <ChevronRight className="w-3 h-3" />
-                </button>
-              </div>
+       
 
               {/* Alert Banner Batas Transaksi Aktif di HP (>= 300 Peringatan, >= 400 Terkunci) */}
               {activeBranchTrx.length >= 300 && (

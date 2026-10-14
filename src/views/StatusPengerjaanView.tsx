@@ -22,6 +22,7 @@ interface StatusPengerjaanViewProps {
   transaksiList: Transaksi[];
   semuaLayanan: Layanan[];
   staffList: User[];
+  currentUser?: User | null;
   settings: SettingsData;
   activeLaundryId: string;
   onOpenDetail: (transaksiId: string) => void;
@@ -35,6 +36,7 @@ export const StatusPengerjaanView: React.FC<StatusPengerjaanViewProps> = ({
   transaksiList,
   semuaLayanan,
   staffList,
+  currentUser,
   settings,
   activeLaundryId,
   onOpenDetail,
@@ -144,11 +146,12 @@ export const StatusPengerjaanView: React.FC<StatusPengerjaanViewProps> = ({
       if (staffList.length > 0) {
         setSelectedTrxForStaff(trx);
       } else {
-        // Direct transition
+        // Direct transition: tulis username user yang sedang login
+        const loginUserName = currentUser?.username || currentUser?.displayName || 'Kasir';
         const updated = {
           ...trx,
           status: 'Proses' as const,
-          dikerjakanOleh: 'Kasir Utama',
+          dikerjakanOleh: loginUserName,
         };
         onUpdateTransaksi(updated);
       }
@@ -415,6 +418,7 @@ export const StatusPengerjaanView: React.FC<StatusPengerjaanViewProps> = ({
         isOpen={!!selectedTrxForStaff}
         onClose={() => setSelectedTrxForStaff(null)}
         staffList={staffList}
+        currentUser={currentUser}
         transaksi={selectedTrxForStaff}
         onAssign={handleAssignStaff}
       />

@@ -37,6 +37,7 @@ import { AturKasModal } from './components/AturKasModal';
 import { SwitchBranchModal } from './components/SwitchBranchModal';
 import { ApkPlaystoreModal } from './components/ApkPlaystoreModal';
 import { LimitTransaksiModal } from './components/LimitTransaksiModal';
+import { AssignStaffModal } from './components/AssignStaffModal';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { DesktopSidebar } from './components/DesktopSidebar';
 import { useDeviceDetect } from './hooks/useDeviceDetect';
@@ -136,6 +137,7 @@ export default function App() {
   const [isSwitchBranchOpen, setIsSwitchBranchOpen] = useState(false);
   const [isApkModalOpen, setIsApkModalOpen] = useState(false);
   const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
+  const [trxForAssignStaff, setTrxForAssignStaff] = useState<Transaksi | null>(null);
 
   // Active branch entity
   const activeLaundry =
@@ -698,10 +700,19 @@ export default function App() {
             onSyncCloudData={() => loadFirestoreData(currentUser, true)}
             onSelesaikanTransaksi={(trx) => {
               if (trx.status === 'Diterima') {
-                const updated = { ...trx, status: 'Proses' as const };
-                updateTransaksiList(
-                  transaksiList.map((t) => (t.id === trx.id ? updated : t))
-                );
+                if (staffList.length > 0) {
+                  setTrxForAssignStaff(trx);
+                } else {
+                  const loginUserName = currentUser?.username || currentUser?.displayName || 'Kasir';
+                  const updated = {
+                    ...trx,
+                    status: 'Proses' as const,
+                    dikerjakanOleh: loginUserName,
+                  };
+                  updateTransaksiList(
+                    transaksiList.map((t) => (t.id === trx.id ? updated : t))
+                  );
+                }
               } else if (trx.status === 'Proses') {
                 const updated = {
                   ...trx,
@@ -797,6 +808,7 @@ export default function App() {
             transaksiList={transaksiList}
             semuaLayanan={layananList}
             staffList={staffList}
+            currentUser={currentUser}
             settings={settings}
             activeLaundryId={activeLaundryId}
             onOpenDetail={(id) => {
@@ -966,6 +978,29 @@ export default function App() {
             setActiveView('status_pengerjaan');
           }}
           onProceedCreateNew={handleProceedCreateNewFromLimit}
+        />
+
+        {/* Modal Pilih Petugas Pengerjaan / Tugaskan Staf dari Dashboard */}
+        <AssignStaffModal
+          isOpen={!!trxForAssignStaff}
+          onClose={() => setTrxForAssignStaff(null)}
+          staffList={staffList}
+          currentUser={currentUser}
+          transaksi={trxForAssignStaff}
+          onAssign={(staffName) => {
+            if (!trxForAssignStaff) return;
+            const autoFinish = settings.selesaikanSaatDitugaskan;
+            const updated: Transaksi = {
+              ...trxForAssignStaff,
+              dikerjakanOleh: staffName,
+              status: autoFinish ? 'Selesai' : 'Proses',
+              tanggalStatusSelesai: autoFinish ? Date.now() : null,
+            };
+            updateTransaksiList(
+              transaksiList.map((t) => (t.id === trxForAssignStaff.id ? updated : t))
+            );
+            setTrxForAssignStaff(null);
+          }}
         />
       </div>
     </div>
