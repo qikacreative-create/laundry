@@ -218,7 +218,7 @@ export const StatusPengerjaanView: React.FC<StatusPengerjaanViewProps> = ({
         </div>
 
         {/* Staff Workload Box (Matches container_summary_staf) */}
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-2">
+        <div className="bg-white rounded-2xl p-2 border border-slate-200 shadow-2xs space-y-2">
           <h3 className="text-xs font-bold text-slate-700">Ringkasan Beban Kerja Staf:</h3>
           {Object.keys(staffWorkload).length === 0 ? (
             <p className="text-xs text-slate-400 italic">Belum ada cucian yang ditugaskan ke staf.</p>
@@ -236,104 +236,7 @@ export const StatusPengerjaanView: React.FC<StatusPengerjaanViewProps> = ({
           )}
         </div>
 
-        {/* Filter Tabs: Pesanan Selesai, Baru Masuk, Sedang Dikerjakan, Semua */}
-        <div className="bg-white rounded-2xl p-2 border border-slate-200 shadow-2xs space-y-1.5">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
-              <Filter className="w-3.5 h-3.5 text-[#800000]" />
-              <span>Filter Status:</span>
-            </span>
-            <span className="text-[10px] text-slate-400">
-              {statusFilter === 'semua' && 'Semua Antrean'}
-              {statusFilter === 'selesai' && 'Hanya Pesanan Selesai'}
-              {statusFilter === 'baru_masuk' && 'Pesanan Baru Masuk'}
-              {statusFilter === 'sedang_dikerjakan' && 'Sedang Dikerjakan'}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-            {/* Selesai */}
-            <button
-              type="button"
-              onClick={() => setStatusFilter('selesai')}
-              className={`py-1.5 px-2 rounded-xl text-xs font-bold flex items-center justify-between transition ${
-                statusFilter === 'selesai'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
-              }`}
-            >
-              <span className="truncate flex items-center gap-1">
-                <CheckCircle className="w-3 h-3 shrink-0" />
-                <span>Selesai</span>
-              </span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                statusFilter === 'selesai' ? 'bg-white/25 text-white' : 'bg-emerald-200 text-emerald-900'
-              }`}>
-                {filterCounts.selesai}
-              </span>
-            </button>
-
-            {/* Baru Masuk */}
-            <button
-              type="button"
-              onClick={() => setStatusFilter('baru_masuk')}
-              className={`py-1.5 px-2 rounded-xl text-xs font-bold flex items-center justify-between transition ${
-                statusFilter === 'baru_masuk'
-                  ? 'bg-rose-700 text-white shadow-xs'
-                  : 'bg-rose-50 text-rose-800 hover:bg-rose-100'
-              }`}
-            >
-              <span className="truncate flex items-center gap-1">
-                <Clock className="w-3 h-3 shrink-0" />
-                <span>Baru Masuk</span>
-              </span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                statusFilter === 'baru_masuk' ? 'bg-white/25 text-white' : 'bg-rose-200 text-rose-900'
-              }`}>
-                {filterCounts.baruMasuk}
-              </span>
-            </button>
-
-            {/* Sedang Dikerjakan */}
-            <button
-              type="button"
-              onClick={() => setStatusFilter('sedang_dikerjakan')}
-              className={`py-1.5 px-2 rounded-xl text-xs font-bold flex items-center justify-between transition ${
-                statusFilter === 'sedang_dikerjakan'
-                  ? 'bg-amber-600 text-white shadow-xs'
-                  : 'bg-amber-50 text-amber-800 hover:bg-amber-100'
-              }`}
-            >
-              <span className="truncate flex items-center gap-1">
-                <Sparkles className="w-3 h-3 shrink-0" />
-                <span>Dikerjakan</span>
-              </span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                statusFilter === 'sedang_dikerjakan' ? 'bg-white/25 text-white' : 'bg-amber-200 text-amber-900'
-              }`}>
-                {filterCounts.sedangDikerjakan}
-              </span>
-            </button>
-
-            {/* Semua */}
-            <button
-              type="button"
-              onClick={() => setStatusFilter('semua')}
-              className={`py-1.5 px-2 rounded-xl text-xs font-bold flex items-center justify-between transition ${
-                statusFilter === 'semua'
-                  ? 'bg-slate-800 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
-            >
-              <span className="truncate">Semua</span>
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                statusFilter === 'semua' ? 'bg-white/25 text-white' : 'bg-slate-200 text-slate-700'
-              }`}>
-                {filterCounts.semua}
-              </span>
-            </button>
-          </div>
-        </div>
+     
 
         {/* Tombol Aksi Massal: Selesaikan & Arsipkan Semua Cucian Selesai */}
         {filterCounts.selesai > 0 && (statusFilter === 'selesai' || statusFilter === 'semua') && (

@@ -254,7 +254,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     if (raw.includes('harian')) return 'Paket Harian';
     if (raw.includes('bulanan')) return 'Paket Bulanan';
     if (raw.includes('standar') || raw.includes('gratis') || raw.includes('free')) return 'Paket Standar';
-    return 'Paket Premium';
+    return 'selection';
   }, [currentUser.subscriptionType]);
 
   const formattedToday = new Intl.DateTimeFormat('id-ID', {
@@ -1548,17 +1548,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       </div>
                     </div>
 
-                    <div
-                      onClick={onOpenKelolaOwner}
-                      className="flex justify-between items-center text-[11px] pt-1.5 border-t border-slate-100 cursor-pointer active:scale-98 transition"
-                    >
-                      <span className="text-slate-500 flex items-center gap-1 font-medium">
-                        <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" /> Paket Aktif:
-                      </span>
-                      <span className="font-bold text-amber-900 bg-amber-100/80 px-2 py-0.5 rounded-md flex items-center gap-1">
-                        {paketNama} • {sisaHari} Hari Lagi <ChevronRight className="w-3 h-3 text-amber-700" />
-                      </span>
-                    </div>
+         
                   </>
                 )}
               </div>

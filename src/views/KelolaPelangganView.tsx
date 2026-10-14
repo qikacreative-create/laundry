@@ -119,69 +119,72 @@ export const KelolaPelangganView: React.FC<KelolaPelangganViewProps> = ({
         <span>Total Terdaftar: {pelangganList.length} Pelanggan</span>
       </div>
 
-      {/* Customers List */}
-      <main className="flex-1 px-3 md:px-6 space-y-2 overflow-y-auto max-w-xl md:max-w-4xl lg:max-w-5xl mx-auto w-full">
-        {filtered.length === 0 ? (
-          <div className="p-8 bg-white rounded-2xl text-center text-xs text-slate-400 border border-slate-200 italic">
-            Belum ada pelanggan ditemukan.
-          </div>
-        ) : (
-          filtered.map((p) => (
-            <div
-              key={p.id}
-              className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between gap-3 hover:border-slate-300 transition"
-            >
-              <div className="flex-1 min-w-0 space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-sm text-slate-900 truncate">{p.nama}</span>
-                </div>
-
-                {p.nomorTelepon && (
-                  <div className="flex items-center gap-1 text-xs text-slate-600">
-                    <Phone className="w-3 h-3 text-emerald-600 shrink-0" />
-                    <span>{p.nomorTelepon}</span>
-                  </div>
-                )}
-
-                {p.alamat && (
-                  <div className="flex items-center gap-1 text-[11px] text-slate-400 truncate">
-                    <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                    <span>{p.alamat}</span>
-                  </div>
-                )}
-
-                {p.catatani && (
-                  <p className="text-[10px] text-amber-700 italic bg-amber-50/50 p-1 rounded mt-1">
-                    Catatan: {p.catatani}
-                  </p>
-                )}
-              </div>
-
-              {/* Edit & Delete Action Buttons */}
-              <div className="flex items-center gap-1 shrink-0">
-                <button
-                  onClick={() => openEditModal(p)}
-                  className="p-2 rounded-xl text-slate-500 hover:text-[#800000] hover:bg-rose-50 transition"
-                  title="Edit Pelanggan"
-                >
-                  <Edit3 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm(`Hapus pelanggan '${p.nama}'?`)) {
-                      onDeletePelanggan(p.id);
-                    }
-                  }}
-                  className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
-                  title="Hapus Pelanggan"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
+    {/* Customers List */}
+<main className="flex-1 px-2 md:px-6 space-y-2 overflow-y-auto max-w-xl md:max-w-4xl lg:max-w-5xl mx-auto w-full">
+  {filtered.length === 0 ? (
+    <div className="p-8 bg-white rounded-2xl text-center text-xs text-slate-400 border border-slate-200 italic">
+      Belum ada pelanggan ditemukan.
+    </div>
+  ) : (
+    filtered.map((p) => (
+      <div
+        key={p.id}
+        className="bg-white px-3 py-1 rounded-2xl border border-slate-200 shadow-2xs flex flex-col gap-1 hover:border-slate-300 transition"
+      >
+        {/* Baris 1: Nama Pelanggan & Nomor Telepon */}
+        <div className="flex items-center justify-between gap-3 min-w-0">
+          <span className="font-bold text-xs text-slate-900 truncate">{p.nama}</span>
+          {p.nomorTelepon && (
+            <div className="flex items-center gap-1 text-xs text-slate-600 shrink-0 font-medium">
+              <Phone className="w-3 h-3 text-emerald-600" />
+              <span>{p.nomorTelepon}</span>
             </div>
-          ))
-        )}
-      </main>
+          )}
+        </div>
+
+        {/* Baris 2: Alamat/Catatan (Kiri) & Tombol Aksi (Kanan) */}
+        <div className="flex items-center justify-between gap-3 pt-1 -mt-0.5 border-t border-slate-100 min-w-0">
+          <div className="min-w-0 flex-1 truncate">
+            {p.catatani ? (
+              <p className="text-[10px] text-amber-700 italic truncate">
+                Catatan: {p.catatani}
+              </p>
+            ) : p.alamat ? (
+              <div className="flex items-center gap-1 text-[11px] text-slate-400 truncate">
+                <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                <span className="truncate">{p.alamat}</span>
+              </div>
+            ) : (
+              <span className="text-[10px] text-slate-300 italic">Tidak ada alamat/catatan</span>
+            )}
+          </div>
+
+          {/* Edit & Delete Action Buttons */}
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={() => openEditModal(p)}
+              className="p-1.5 rounded-xl text-slate-500 hover:text-[#800000] hover:bg-rose-50 border border-slate-200 bg-white transition active:scale-95 flex items-center justify-center"
+              title="Edit Pelanggan"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => {
+                if (confirm(`Hapus pelanggan '${p.nama}'?`)) {
+                  onDeletePelanggan(p.id);
+                }
+              }}
+              className="p-1.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 border border-slate-200 bg-white transition active:scale-95 flex items-center justify-center"
+              title="Hapus Pelanggan"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    ))
+  )}
+</main>
 
       {/* Add / Edit Customer Dialog (Matches dialog_add_edit_pelanggan.xml) */}
       {isAddModalOpen && (

@@ -151,7 +151,6 @@ export const ArsipView: React.FC<ArsipViewProps> = ({
           </button>
           <div>
             <h1 className="font-bold text-base tracking-wide leading-tight">Arsip Transaksi</h1>
-            <p className="text-[10px] text-rose-200">Hemat Kuota: Arsip disimpan di penyimpanan lokal</p>
           </div>
         </div>
 
@@ -177,12 +176,7 @@ export const ArsipView: React.FC<ArsipViewProps> = ({
         </button>
         <div className="text-center">
           <span className="font-bold text-sm tracking-wide capitalize">{monthYearLabel}</span>
-          <div className="flex items-center justify-center gap-1 mt-0.5">
-            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-200 bg-emerald-950/40 px-2 py-0.5 rounded-full">
-              <Zap className="w-3 h-3 text-emerald-300" />
-              <span>Cache Lokal (0 Reads)</span>
-            </span>
-          </div>
+    
         </div>
         <button
           onClick={() => setSelectedMonthOffset((prev) => prev + 1)}

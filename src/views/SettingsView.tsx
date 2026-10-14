@@ -183,18 +183,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             )}
           </div>
 
-          {/* Quick APK / TWA Banner */}
-          <button
-            type="button"
-            onClick={onOpenApkModal}
-            className="w-full py-2.5 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold text-xs shadow-xs flex items-center justify-between transition active:scale-98"
-          >
-            <div className="flex items-center gap-2 text-left">
-              <Smartphone className="w-4 h-4 text-slate-900 shrink-0" />
-              <span>Unduh Berkas APK & Play Store (TWA)</span>
-            </div>
-            <ChevronRight className="w-4 h-4 text-slate-900 shrink-0" />
-          </button>
         </div>
 
         {/* SECTION 1: MANAJEMEN OUTLET & KASIR (Owner Only) */}

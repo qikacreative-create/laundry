@@ -338,124 +338,87 @@ export const KelolaLayananView: React.FC<KelolaLayananViewProps> = ({
               return (
                 <div
                   key={lay.id}
-                  className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-slate-300 transition-all p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
                 >
-                  {/* Left Column: Icon + Title & Tags */}
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
-                    {/* Unit Icon Badge */}
-                    <div
-                      className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border ${
-                        isKg
-                          ? 'bg-rose-50 border-rose-200 text-[#800000]'
-                          : 'bg-blue-50 border-blue-200 text-blue-700'
-                      }`}
-                    >
-                      {isKg ? <Scale className="w-5 h-5" /> : <Shirt className="w-5 h-5" />}
-                    </div>
+<div className="flex flex-col gap-1 px-2 py-1 bg-white border border-slate-200 rounded-2xl shadow-2xs">
+  {/* Baris 1: Nama Layanan & Harga (Tulisan diperkecil) */}
+  <div className="flex items-center justify-between gap-3 min-w-0">
+    <h4 className="font-bold text-xs text-slate-900 truncate">{lay.nama}</h4>
+    <div className="text-right shrink-0">
+      <span className="text-sm font-black text-[#800000] tracking-tight">{formatRupiah(lay.harga)}</span>
+      <span className="text-[9px] font-medium text-slate-400 ml-1">/ {lay.satuanHarga}</span>
+    </div>
+  </div>
 
-                    {/* Details */}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-bold text-sm text-slate-900 truncate">{lay.nama}</h4>
-                        <span
-                          className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md border ${
-                            isKg
-                              ? 'bg-rose-50 text-[#800000] border-rose-200'
-                              : 'bg-blue-50 text-blue-700 border-blue-200'
-                          }`}
-                        >
-                          {lay.satuanHarga}
-                        </span>
-                      </div>
+  {/* Baris 2: Tag Info & Tombol Aksi (Garis lebih dekat ke atas dengan -mt-1) */}
+  <div className="flex items-center justify-between gap-2 pt-1 -mt-1 border-t border-slate-100 flex-wrap">
+    <div className="flex items-center gap-1.5 flex-wrap">
+      {/* Duration Pill */}
+      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-lg flex items-center gap-1 ${
+        isExpress ? 'bg-amber-100/80 text-amber-800' : 'bg-slate-100 text-slate-600'
+      }`}>
+        {isExpress ? <Zap className="w-3 h-3 text-amber-600" /> : <Clock className="w-3 h-3 text-slate-400" />}
+        <span>{lay.durasi}</span>
+      </span>
 
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        {/* Duration Pill */}
-                        <span
-                          className={`text-[11px] font-semibold px-2 py-0.5 rounded-lg flex items-center gap-1 ${
-                            isExpress
-                              ? 'bg-amber-100/80 text-amber-800'
-                              : 'bg-slate-100 text-slate-600'
-                          }`}
-                        >
-                          {isExpress ? <Zap className="w-3 h-3 text-amber-600" /> : <Clock className="w-3 h-3 text-slate-400" />}
-                          <span>{lay.durasi}</span>
-                        </span>
+      {/* Staff workload indicator toggle */}
+      <button
+        type="button"
+        onClick={() => handleToggleBeban(lay)}
+        title="Klik untuk mengubah status hitungan beban staf"
+        className={`text-[10px] font-semibold px-2 py-0.5 rounded-lg border transition flex items-center gap-1 ${
+          lay.hitungBebanKerja
+            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+            : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'
+        }`}
+      >
+        <span className={`w-1.5 h-1.5 rounded-full ${lay.hitungBebanKerja ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+        <span>{lay.hitungBebanKerja ? 'Beban Staf Aktif' : 'Tanpa Beban'}</span>
+      </button>
+    </div>
 
-                        {/* Staff workload indicator toggle */}
-                        <button
-                          type="button"
-                          onClick={() => handleToggleBeban(lay)}
-                          title="Klik untuk mengubah status hitungan beban staf"
-                          className={`text-[10px] font-semibold px-2 py-0.5 rounded-lg border transition flex items-center gap-1 ${
-                            lay.hitungBebanKerja
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                              : 'bg-slate-50 text-slate-400 border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          <span className={`w-1.5 h-1.5 rounded-full ${lay.hitungBebanKerja ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-                          <span>{lay.hitungBebanKerja ? 'Beban Staf Aktif' : 'Tanpa Beban'}</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+    {/* Action Buttons */}
+    <div className="flex items-center gap-1.5">
+      <div className="flex bg-slate-50 border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+        <button
+          disabled={idx === 0}
+          onClick={() => moveItem(idx, 'up')}
+          title="Pindah ke atas"
+          className="px-1.5 py-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 disabled:opacity-20 transition flex items-center justify-center border-r border-slate-200"
+        >
+          <ArrowUp className="w-3.5 h-3.5" />
+        </button>
+        <button
+          disabled={idx === layananList.length - 1}
+          onClick={() => moveItem(idx, 'down')}
+          title="Pindah ke bawah"
+          className="px-1.5 py-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 disabled:opacity-20 transition flex items-center justify-center"
+        >
+          <ArrowDown className="w-3.5 h-3.5" />
+        </button>
+      </div>
 
-                  {/* Right Column: Price & Actions */}
-                  <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-                    {/* Price display */}
-                    <div className="text-left sm:text-right">
-                      <div className="text-base font-black text-[#800000] tracking-tight">
-                        {formatRupiah(lay.harga)}
-                      </div>
-                      <div className="text-[10px] font-medium text-slate-400">
-                        per {lay.satuanHarga}
-                      </div>
-                    </div>
+      <button
+        onClick={() => openEditModal(lay)}
+        className="p-1.5 rounded-xl text-slate-600 hover:text-[#800000] hover:bg-rose-50 border border-slate-200 bg-white shadow-2xs transition active:scale-95 flex items-center justify-center"
+        title="Edit Layanan"
+      >
+        <Edit3 className="w-3.5 h-3.5" />
+      </button>
 
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-1 shrink-0">
-                      {/* Reorder Buttons */}
-                      <div className="flex flex-col bg-slate-50 border border-slate-200/80 rounded-lg p-0.5">
-                        <button
-                          disabled={idx === 0}
-                          onClick={() => moveItem(idx, 'up')}
-                          title="Pindah ke atas"
-                          className="p-1 text-slate-400 hover:text-slate-800 disabled:opacity-20 transition"
-                        >
-                          <ArrowUp className="w-3 h-3" />
-                        </button>
-                        <button
-                          disabled={idx === layananList.length - 1}
-                          onClick={() => moveItem(idx, 'down')}
-                          title="Pindah ke bawah"
-                          className="p-1 text-slate-400 hover:text-slate-800 disabled:opacity-20 transition"
-                        >
-                          <ArrowDown className="w-3 h-3" />
-                        </button>
-                      </div>
-
-                      {/* Edit Button */}
-                      <button
-                        onClick={() => openEditModal(lay)}
-                        className="p-2 rounded-xl text-slate-600 hover:text-[#800000] hover:bg-rose-50 border border-slate-200 bg-white shadow-2xs transition active:scale-95"
-                        title="Edit Layanan"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-
-                      {/* Delete Button */}
-                      <button
-                        onClick={() => {
-                          if (confirm(`Yakin ingin menghapus layanan '${lay.nama}'?`)) {
-                            onDeleteLayanan(lay.id);
-                          }
-                        }}
-                        className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 border border-slate-200 bg-white shadow-2xs transition active:scale-95"
-                        title="Hapus Layanan"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
+      <button
+        onClick={() => {
+          if (confirm(`Yakin ingin menghapus layanan '${lay.nama}'?`)) {
+            onDeleteLayanan(lay.id);
+          }
+        }}
+        className="p-1.5 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 border border-slate-200 bg-white shadow-2xs transition active:scale-95 flex items-center justify-center"
+        title="Hapus Layanan"
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  </div>
+</div>
                 </div>
               );
             })

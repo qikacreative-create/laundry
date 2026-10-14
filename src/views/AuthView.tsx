@@ -150,9 +150,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess, staffList, o
       <div className="w-full max-w-md mx-auto my-auto py-8">
         {/* Card Header */}
         <div className="text-center space-y-2 mb-6">
-          <div className="w-16 h-16 rounded-2xl bg-[#800000] text-white flex items-center justify-center mx-auto shadow-lg border border-red-500/30">
-            <Building2 className="w-8 h-8" />
-          </div>
+     
           <h1 className="text-2xl font-black tracking-wide text-white">Assalamu'alaikum</h1>
           <p className="text-xs text-slate-400">
             {isSignUp
@@ -166,139 +164,149 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess, staffList, o
           <form onSubmit={isSignUp ? handleSignUp : handleLogin} className="space-y-3.5">
             {isSignUp && (
               <>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    Nama Laundry Anda *
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      required
-                      value={namaLaundry}
-                      onChange={(e) => setNamaLaundry(e.target.value)}
-                      placeholder="Contoh: Barokah Laundry Suci"
-                      className="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#800000]"
-                    />
-                    <Building2 className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  </div>
-                </div>
+       <div className="space-y-4">
+  {/* Nama Laundry */}
+  <div>
+    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+      Nama Laundry Anda *
+    </label>
+    <div className="relative">
+      <input
+        type="text"
+        required
+        value={namaLaundry}
+        onChange={(e) => setNamaLaundry(e.target.value)}
+        placeholder="Contoh: Barokah Laundry Suci"
+        className="w-full pl-10 pr-4 py-3.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#800000]"
+      />
+      <Building2 className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
+    </div>
+  </div>
 
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    Nomor WhatsApp / HP *
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="tel"
-                      required
-                      value={telepon}
-                      onChange={(e) => setTelepon(e.target.value)}
-                      placeholder="081234567890"
-                      className="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#800000]"
-                    />
-                    <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  </div>
-                </div>
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  {/* Nomor WhatsApp / HP */}
+  <div>
+    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+      Nomor WhatsApp / HP *
+    </label>
+    <div className="relative">
+      <input
+        type="tel"
+        required
+        value={telepon}
+        onChange={(e) => setTelepon(e.target.value)}
+        placeholder="081234567890"
+        className="w-full pl-10 pr-4 py-3.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#800000]"
+      />
+      <Phone className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
+    </div>
+  </div>
 
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                    Username Pemilik
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Nama panggilan pemilik"
-                      className="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#800000]"
-                    />
-                    <User className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  </div>
-                </div>
+  {/* Username Pemilik */}
+  <div>
+    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+      Username Pemilik
+    </label>
+    <div className="relative">
+      <input
+        type="text"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        placeholder="Nama panggilan pemilik"
+        className="w-full pl-10 pr-4 py-3.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#800000]"
+      />
+      <User className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
+    </div>
+  </div>
+</div>
+</div>
               </>
             )}
+<div className="space-y-4">
+  {/* Kolom Email / No. HP */}
+  <div>
+    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+      {isSignUp ? 'Email (untuk login) *' : 'Email / No. HP *'}
+    </label>
+    <div className="relative">
+      <input
+        type="text"
+        required
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="contoh@gmail.com"
+        className="w-full pl-10 pr-4 py-3.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#800000]"
+      />
+      <Mail className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
+    </div>
+  </div>
 
-            <div>
-              <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                {isSignUp ? 'Email (untuk login) *' : 'Email / No. HP *'}
-              </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="contoh@gmail.com"
-                  className="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#800000]"
-                />
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              </div>
-            </div>
+  {/* Kolom Password */}
+  <div>
+    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+      Password *
+    </label>
+    <div className="relative">
+      <input
+        type={showPassword ? 'text' : 'password'}
+        required
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="••••••••"
+        className="w-full pl-10 pr-10 py-3.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#800000]"
+      />
+      <Lock className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
+      <button
+        type="button"
+        onClick={() => setShowPassword(!showPassword)}
+        className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-200"
+      >
+        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+      </button>
+    </div>
+  </div>
+</div>
 
-            <div>
-              <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                Password *
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full pl-9 pr-10 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#800000]"
-                />
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
+      {isSignUp && (
+  <div>
+    <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
+      Konfirmasi Password *
+    </label>
+    <div className="relative">
+      <input
+        type={showPassword ? 'text' : 'password'}
+        required
+        value={confirmPassword}
+        onChange={(e) => setConfirmPassword(e.target.value)}
+        placeholder="••••••••"
+        className="w-full pl-10 pr-4 py-3.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#800000]"
+      />
+      <Lock className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
+    </div>
+  </div>
+)}
 
-            {isSignUp && (
-              <div>
-                <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1">
-                  Konfirmasi Password *
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#800000]"
-                  />
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                </div>
-              </div>
-            )}
-
-            {isSignUp && (
-              <div className="flex items-start gap-2 pt-1 text-xs text-slate-300">
-                <input
-                  type="checkbox"
-                  id="agree"
-                  checked={agreeTerms}
-                  onChange={(e) => setAgreeTerms(e.target.checked)}
-                  className="mt-0.5 accent-[#800000]"
-                />
-                <label htmlFor="agree" className="text-[11px]">
-                  Saya menyetujui{' '}
-                  <button
-                    type="button"
-                    onClick={() => setShowTermsModal(true)}
-                    className="text-amber-400 underline font-semibold hover:text-amber-300"
-                  >
-                    Syarat dan Ketentuan Layanan
-                  </button>
-                </label>
-              </div>
-            )}
+{isSignUp && (
+  <div className="flex items-start gap-2.5 pt-1 text-slate-300">
+    <input
+      type="checkbox"
+      id="agree"
+      checked={agreeTerms}
+      onChange={(e) => setAgreeTerms(e.target.checked)}
+      className="mt-0.5 w-4 h-4 accent-[#800000] cursor-pointer"
+    />
+    <label htmlFor="agree" className="text-xs leading-relaxed cursor-pointer select-none">
+      Saya menyetujui{' '}
+      <button
+        type="button"
+        onClick={() => setShowTermsModal(true)}
+        className="text-amber-400 underline font-semibold hover:text-amber-300 focus:outline-none"
+      >
+        Syarat dan Ketentuan Layanan
+      </button>
+    </label>
+  </div>
+)}
 
             {authError && (
               <div className="p-3 rounded-xl bg-red-950/80 border border-red-500/50 text-red-200 text-xs flex items-start gap-2 animate-fade-in">
@@ -353,7 +361,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess, staffList, o
                   />
                 </svg>
               )}
-              <span>{isSignUp ? 'Daftar dengan Google' : 'Masuk dengan Google (Akun Nyata)'}</span>
+              <span>{isSignUp ? 'Daftar dengan Google' : 'Masuk dengan Google'}</span>
             </button>
           </div>
 
@@ -389,10 +397,10 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess, staffList, o
       {/* Footer Branding matching Android XML */}
       <footer className="text-center space-y-1.5 pb-2">
         <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-          Terima kasih telah mempercayakan kami menjadi teman bisnis laundry Anda
+          Terima kasih telah mempercayakan kami menjadi teman bisnis anda
         </p>
         <div className="inline-block px-4 py-1.5 rounded-full bg-[#800000] text-white text-xs font-bold tracking-wide">
-          Jazakumullah Ahsanal Jaza • Powered By Kafila Suci
+          Jazakumullah Ahsanal Jaza
         </div>
       </footer>
 
