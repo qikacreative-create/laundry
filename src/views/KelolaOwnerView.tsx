@@ -13,7 +13,15 @@ import {
   ChevronDown,
   Edit,
   Trash2,
-  X
+  X,
+  Copy,
+  Check,
+  ExternalLink,
+  QrCode,
+  AlertCircle,
+  Sparkles,
+  Lock,
+  UserCheck
 } from 'lucide-react';
 import { User, Laundry, SubscriptionHistory } from '../types';
 import { formatRupiah, formatDateIndo } from '../utils/formatters';
@@ -30,6 +38,7 @@ interface KelolaOwnerViewProps {
   onDeleteLaundry: (laundryId: string) => void;
   onTopUpWallet: (nominal: number) => void;
   onExtendSubscription: (packageName: string, cost: number, days: number) => void;
+  onUpdateOwnerProfile?: (data: { displayName: string; nomorTelepon?: string | null }) => void;
 }
 
 export const KelolaOwnerView: React.FC<KelolaOwnerViewProps> = ({
@@ -44,12 +53,21 @@ export const KelolaOwnerView: React.FC<KelolaOwnerViewProps> = ({
   onDeleteLaundry,
   onTopUpWallet,
   onExtendSubscription,
+  onUpdateOwnerProfile,
 }) => {
   const [showBranches, setShowBranches] = useState(true);
   const [harianDays, setHarianDays] = useState('7');
   const [showTopUpModal, setShowTopUpModal] = useState(false);
+  const [customTopUp, setCustomTopUp] = useState('');
+  const [selectedNominal, setSelectedNominal] = useState<number>(30000);
+  const [copiedBank, setCopiedBank] = useState<string | null>(null);
   const [showAddBranchModal, setShowAddBranchModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+
+  // Edit Owner Profile Modal State
+  const [showEditOwnerModal, setShowEditOwnerModal] = useState(false);
+  const [editDisplayName, setEditDisplayName] = useState(currentUser.displayName || currentUser.username || '');
+  const [editNomorTelepon, setEditNomorTelepon] = useState(currentUser.nomorTelepon || '');
 
   // Add branch form
   const [newBranchName, setNewBranchName] = useState('');
@@ -136,12 +154,39 @@ export const KelolaOwnerView: React.FC<KelolaOwnerViewProps> = ({
       </header>
 
       <main className="flex-1 p-3 md:p-6 space-y-3 md:space-y-4 overflow-y-auto max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto w-full">
-        {/* Owner Display Banner */}
-        <div className="text-center py-1">
-          <div className="text-xs text-slate-400 font-bold uppercase tracking-widest">Akun Pemilik</div>
-          <h2 className="text-lg font-black text-slate-900 mt-0.5">
-            - {currentUser.displayName || currentUser.username} -
-          </h2>
+        {/* Owner Profile Banner Card */}
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+              <UserCheck className="w-3.5 h-3.5 text-[#800000]" />
+              <span>Profil Pemilik / Owner</span>
+            </div>
+            <h2 className="text-base font-black text-slate-900 mt-0.5 truncate">
+              {currentUser.displayName || currentUser.username}
+            </h2>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 mt-1">
+              <span className="flex items-center gap-1">
+                📞 <strong>{currentUser.nomorTelepon || 'Nomor HP belum diatur'}</strong>
+              </span>
+              <span className="text-slate-300">•</span>
+              <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md font-medium">
+                <Lock className="w-3 h-3 text-slate-400" />
+                <span>Login: {currentUser.emailOrPhone || currentUser.username} (Terkunci)</span>
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setEditDisplayName(currentUser.displayName || currentUser.username || '');
+              setEditNomorTelepon(currentUser.nomorTelepon || '');
+              setShowEditOwnerModal(true);
+            }}
+            className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#800000] hover:bg-[#660000] text-white font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer shrink-0"
+          >
+            <Edit className="w-3.5 h-3.5" />
+            <span>Ganti Nama & Nomor</span>
+          </button>
         </div>
 
         {/* 1. WALLET & SUBSCRIPTION CARD (Matches wallet card in activity_kelola_owner.xml) */}
@@ -152,19 +197,36 @@ export const KelolaOwnerView: React.FC<KelolaOwnerViewProps> = ({
             <span>Masa Aktif Akun: {sisaHari > 0 ? `Aktif (${sisaHari} Hari Tersisa)` : 'Kedaluwarsa'}</span>
           </div>
 
-          {/* Saldo Akun & Isi Saldo */}
+          {/* Saldo Akun & Tombol Ganti Nama / Top Up */}
           <div className="p-4 flex items-center justify-between border-b border-slate-700">
             <div>
               <span className="text-xs text-slate-400 block font-medium">Saldo Dompet Akun</span>
               <span className="text-xl font-black text-white">{formatRupiah(currentUser.walletBalance)}</span>
             </div>
-            <button
-              onClick={() => setShowTopUpModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition active:scale-95"
-            >
-              <Plus className="w-4 h-4" />
-              <span>+ Isi Saldo</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditDisplayName(currentUser.displayName || currentUser.username || '');
+                  setEditNomorTelepon(currentUser.nomorTelepon || '');
+                  setShowEditOwnerModal(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold text-xs shadow-xs transition active:scale-95 cursor-pointer"
+                title="Kelola ganti nama dan nomor telepon owner"
+              >
+                <Edit className="w-3.5 h-3.5" />
+                <span>Ganti Nama/No</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowTopUpModal(true)}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs transition active:scale-95 cursor-pointer"
+                title="Isi saldo akun owner"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Top Up</span>
+              </button>
+            </div>
           </div>
 
           {/* Perpanjangan Options */}
@@ -321,35 +383,231 @@ export const KelolaOwnerView: React.FC<KelolaOwnerViewProps> = ({
         </div>
       </main>
 
-      {/* Top Up Wallet Modal (Matches Play Billing simulation in KelolaOwnerActivity.kt) */}
+      {/* Top Up Wallet Modal */}
       {showTopUpModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in">
-          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-5 space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-              <h3 className="font-bold text-sm text-slate-900">Pilih Nominal Top Up Saldo</h3>
-              <button onClick={() => setShowTopUpModal(false)} className="p-1 rounded-full text-slate-400 hover:bg-slate-100">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="bg-[#800000] text-white p-4 flex justify-between items-center shrink-0">
+              <div>
+                <h3 className="font-bold text-sm flex items-center gap-2">
+                  <CreditCard className="w-4 h-4" />
+                  Isi Saldo Akun Owner
+                </h3>
+                <p className="text-[11px] text-white/80 mt-0.5">
+                  Saldo digunakan untuk perpanjang masa aktif server & cabang laundry
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowTopUpModal(false);
+                  setCustomTopUp('');
+                  setCopiedBank(null);
+                }}
+                className="p-1 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-xs text-slate-500">
-              Saldo digunakan untuk perpanjangan langganan bulanan / harian semua cabang.
-            </p>
 
-            <div className="space-y-2">
-              {[50000, 100000, 200000].map((nom) => (
+            {/* Modal Body */}
+            <div className="p-4 overflow-y-auto space-y-4 text-xs">
+              {/* Saldo Saat Ini & Penjelasan */}
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] text-slate-500 font-medium">Saldo Dompet Saat Ini:</span>
+                  <div className="text-base font-black text-slate-900">{formatRupiah(currentUser.walletBalance)}</div>
+                </div>
+                <div className="text-right text-[11px] text-slate-500">
+                  <span>Masa Aktif: </span>
+                  <strong className={sisaHari > 0 ? 'text-emerald-700 font-bold' : 'text-rose-600 font-bold'}>
+                    {sisaHari > 0 ? `${sisaHari} Hari` : 'Kedaluwarsa'}
+                  </strong>
+                </div>
+              </div>
+
+              {/* 1. Pilih Nominal */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-800 flex items-center gap-1.5">
+                  <span>1. Pilih Nominal Top Up</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[27000, 30000, 50000, 100000].map((nom) => {
+                    const isSelected = selectedNominal === nom && !customTopUp;
+                    return (
+                      <button
+                        key={nom}
+                        type="button"
+                        onClick={() => {
+                          setSelectedNominal(nom);
+                          setCustomTopUp('');
+                        }}
+                        className={`p-2.5 rounded-xl border text-center transition font-bold ${
+                          isSelected
+                            ? 'border-[#800000] bg-rose-50/80 text-[#800000] ring-1 ring-[#800000]'
+                            : 'border-slate-200 hover:border-slate-300 text-slate-700 bg-white'
+                        }`}
+                      >
+                        <span className="block text-[10px] text-slate-400 font-normal">
+                          {nom === 27000 ? 'Pas 1 Bln (1 Cabang)' : 'Top Up'}
+                        </span>
+                        <span className="text-xs font-black">{formatRupiah(nom)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Input Bebas */}
+                <div className="pt-1.5">
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-xs font-bold text-slate-400">Rp</span>
+                    <input
+                      type="number"
+                      min="1000"
+                      step="1000"
+                      placeholder="Atau ketik nominal kustom (misal: 47000)..."
+                      value={customTopUp}
+                      onChange={(e) => {
+                        setCustomTopUp(e.target.value);
+                        const n = parseInt(e.target.value, 10);
+                        if (!isNaN(n) && n > 0) setSelectedNominal(n);
+                      }}
+                      className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-[#800000] focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Tujuan Pembayaran */}
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-slate-800">
+                    2. Tujuan Pembayaran (Transfer ke Rekening Resmi):
+                  </label>
+                </div>
+                <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl space-y-2 text-slate-700">
+                  <p className="text-[11px] text-slate-600">
+                    Pembayaran langganan disetorkan kepada <strong>Admin / Pengembang Laundry Suci</strong> melalui:
+                  </p>
+
+                  {/* Rekening Bank BRI */}
+                  <div className="flex items-center justify-between bg-white p-2.5 rounded-lg border border-amber-200/80">
+                    <div>
+                      <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                        <span className="px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 text-[10px] font-black">BRI</span>
+                        <span className="tracking-wide">4108 0100 8396 530</span>
+                      </div>
+                      <div className="text-[10px] text-slate-500">a/n Iqbal S nuha</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText('410801008396530');
+                        setCopiedBank('BRI');
+                        setTimeout(() => setCopiedBank(null), 2500);
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold flex items-center gap-1 transition"
+                    >
+                      {copiedBank === 'BRI' ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <span className="text-emerald-700">Tersalin</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5 text-slate-500" />
+                          <span>Salin No. Rek</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* E-Wallet DANA */}
+                  <div className="flex items-center justify-between bg-white p-2.5 rounded-lg border border-amber-200/80">
+                    <div>
+                      <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                        <span className="px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 text-[10px] font-black">DANA</span>
+                        <span className="tracking-wide">0856 5978 1477</span>
+                      </div>
+                      <div className="text-[10px] text-slate-500">a/n Suci K Kusumah</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText('085659781477');
+                        setCopiedBank('DANA');
+                        setTimeout(() => setCopiedBank(null), 2500);
+                      }}
+                      className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold flex items-center gap-1 transition"
+                    >
+                      {copiedBank === 'DANA' ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <span className="text-emerald-700">Tersalin</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5 text-slate-500" />
+                          <span>Salin No. DANA</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Cara Konfirmasi Pembayaran */}
+              <div className="space-y-2 pt-2 border-t border-slate-100">
+                <label className="font-bold text-slate-800">
+                  3. Selesaikan Pembayaran:
+                </label>
+
+                {/* Tombol Utama: Kirim Bukti ke WhatsApp Admin */}
                 <button
-                  key={nom}
+                  type="button"
                   onClick={() => {
-                    onTopUpWallet(nom);
-                    setShowTopUpModal(false);
-                    alert(`Top up ${formatRupiah(nom)} berhasil ditambahkan ke saldo dompet!`);
+                    const nominalFinal = customTopUp ? parseInt(customTopUp, 10) || selectedNominal : selectedNominal;
+                    const pesanWA = `Halo Admin Laundry Suci,\nSaya ingin konfirmasi pembayaran langganan / top up saldo akun owner:\n• Nama: ${currentUser.displayName || currentUser.username}\n• ID Akun: ${currentUser.uid}\n• Nominal: ${formatRupiah(nominalFinal)}\n• Metode: Transfer BRI (Iqbal S nuha) / DANA (Suci K Kusumah)\n• Cabang: ${laundries.map((l) => l.namaLaundry).join(', ')}\n\nBerikut saya lampirkan bukti transfernya. Mohon bantu verifikasi saldo akun saya. Terima kasih!`;
+                    window.open(
+                      `https://api.whatsapp.com/send?phone=6285659781477&text=${encodeURIComponent(pesanWA)}`,
+                      '_blank'
+                    );
                   }}
-                  className="w-full p-3 rounded-xl border border-slate-200 hover:border-[#800000] hover:bg-rose-50 text-left font-bold text-xs flex justify-between items-center transition"
+                  className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition active:scale-95"
                 >
-                  <span>Top Up Saldo</span>
-                  <span className="text-[#800000] text-sm">{formatRupiah(nom)}</span>
+                  <span>💬 Kirim Bukti Transfer ke WhatsApp Admin ({formatRupiah(customTopUp ? parseInt(customTopUp, 10) || selectedNominal : selectedNominal)})</span>
+                  <ExternalLink className="w-4 h-4" />
                 </button>
-              ))}
+
+                {/* Tombol Uji Coba / Sandbox Testing */}
+                <div className="pt-2 border-t border-dashed border-slate-200">
+                  <div className="p-2.5 rounded-xl bg-slate-100 border border-slate-200 space-y-2">
+                    <div className="flex items-start gap-1.5 text-[11px] text-slate-600">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                      <span>
+                        <strong>Mode Uji Coba / Demo Developer:</strong> Ingin langsung menambah saldo untuk mengetes perpanjangan paket tanpa transfer riil?
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const nominalFinal = customTopUp ? parseInt(customTopUp, 10) || selectedNominal : selectedNominal;
+                        if (nominalFinal <= 0) {
+                          alert('Nominal harus lebih dari 0.');
+                          return;
+                        }
+                        onTopUpWallet(nominalFinal);
+                        setShowTopUpModal(false);
+                        setCustomTopUp('');
+                        alert(`✅ (Mode Uji Coba) Saldo ${formatRupiah(nominalFinal)} berhasil ditambahkan ke akun Anda!`);
+                      }}
+                      className="w-full py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-900 text-white font-bold text-[11px] transition active:scale-95"
+                    >
+                      ⚡ Tambah Saldo Instan ({formatRupiah(customTopUp ? parseInt(customTopUp, 10) || selectedNominal : selectedNominal)})
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -553,6 +811,121 @@ export const KelolaOwnerView: React.FC<KelolaOwnerViewProps> = ({
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal Edit Nama & Nomor Owner (Login Terkunci Sesuai Permintaan Pengguna) */}
+      {showEditOwnerModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-2xl p-5 space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-2.5">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-rose-50 text-[#800000] flex items-center justify-center">
+                  <UserCheck className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900">Kelola Profil Owner</h3>
+                  <p className="text-[10px] text-slate-400">Ganti nama dan nomor telepon owner</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEditOwnerModal(false)}
+                className="p-1 rounded-full text-slate-400 hover:bg-slate-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {/* 1. Nama Owner */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Nama Lengkap / Tampilan Owner <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={editDisplayName}
+                  onChange={(e) => setEditDisplayName(e.target.value)}
+                  placeholder="Contoh: Budi Santoso"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-[#800000] focus:outline-none"
+                />
+                <span className="text-[10px] text-slate-400 mt-0.5 block">
+                  Nama ini digunakan sebagai identitas penanggung jawab & di sistem.
+                </span>
+              </div>
+
+              {/* 2. Nomor Telepon / WA Owner */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Nomor HP / WhatsApp Owner
+                </label>
+                <input
+                  type="tel"
+                  value={editNomorTelepon}
+                  onChange={(e) => setEditNomorTelepon(e.target.value)}
+                  placeholder="Contoh: 08123456789"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 focus:ring-2 focus:ring-[#800000] focus:outline-none"
+                />
+                <span className="text-[10px] text-slate-400 mt-0.5 block">
+                  Nomor kontak darurat dan konfirmasi WhatsApp.
+                </span>
+              </div>
+
+              {/* 3. Kredensial Login (TERKUNCI / LOCKED 🔒) */}
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Username / Nomor ID Login (Terkunci)</span>
+                  </label>
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
+                    Terkunci
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  readOnly
+                  disabled
+                  value={currentUser.emailOrPhone || currentUser.username}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-200/80 border border-slate-300 text-xs font-bold text-slate-500 cursor-not-allowed select-none"
+                />
+                <p className="text-[10px] text-slate-500 leading-tight pt-0.5">
+                  🔒 Kredensial login dikunci secara permanen demi keamanan agar akses masuk akun Anda tetap aman dan tidak terputus.
+                </p>
+              </div>
+
+              {/* Tombol Aksi */}
+              <div className="flex gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowEditOwnerModal(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!editDisplayName.trim()) {
+                      alert('Nama Owner tidak boleh kosong.');
+                      return;
+                    }
+                    if (onUpdateOwnerProfile) {
+                      onUpdateOwnerProfile({
+                        displayName: editDisplayName.trim(),
+                        nomorTelepon: editNomorTelepon.trim() || null,
+                      });
+                    }
+                    setShowEditOwnerModal(false);
+                    alert('✅ Nama dan nomor owner berhasil diperbarui!');
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-[#800000] hover:bg-[#660000] text-white text-xs font-bold shadow-xs transition active:scale-95"
+                >
+                  Simpan
+                </button>
+              </div>
             </div>
           </div>
         </div>

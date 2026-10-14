@@ -533,6 +533,9 @@ export default function App() {
     const newHist = [historyItem, ...subscriptionHistory];
     setSubscriptionHistory(newHist);
     StorageService.set('subscription_history', newHist);
+
+    // Sinkronisasi saldo dompet ke Firestore
+    FirebaseSyncService.updateUserProfile(updatedUser).catch(console.error);
   };
 
   const handleExtendSubscription = (packageName: string, cost: number, days: number) => {
@@ -562,6 +565,28 @@ export default function App() {
     const newHist = [historyItem, ...subscriptionHistory];
     setSubscriptionHistory(newHist);
     StorageService.set('subscription_history', newHist);
+
+    // Sinkronisasi perpanjangan & sisa saldo ke Firestore
+    FirebaseSyncService.updateUserProfile(updatedUser).catch(console.error);
+  };
+
+  const handleUpdateOwnerProfile = (data: { displayName: string; nomorTelepon?: string | null }) => {
+    if (!currentUser) return;
+    const updatedUser: User = {
+      ...currentUser,
+      displayName: data.displayName.trim(),
+      username: data.displayName.trim(),
+      nomorTelepon: data.nomorTelepon?.trim() || null,
+    };
+    setCurrentUser(updatedUser);
+    StorageService.set('active_user', updatedUser);
+
+    const users = StorageService.get<User[]>('users', []);
+    const updatedUsers = users.map((u) => (u.uid === updatedUser.uid ? updatedUser : u));
+    StorageService.set('users', updatedUsers);
+
+    // Sinkronisasi profil ke Firestore
+    FirebaseSyncService.updateUserProfile(updatedUser).catch(console.error);
   };
 
   const handleSavePengeluaran = (peng: Omit<Pengeluaran, 'id'>) => {
@@ -910,6 +935,7 @@ export default function App() {
             onDeleteLaundry={handleDeleteLaundry}
             onTopUpWallet={handleTopUpWallet}
             onExtendSubscription={handleExtendSubscription}
+            onUpdateOwnerProfile={handleUpdateOwnerProfile}
           />
         )}
 

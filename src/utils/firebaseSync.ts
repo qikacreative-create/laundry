@@ -91,6 +91,18 @@ export class FirebaseSyncService {
     }
   }
 
+  // 1.1 Update user profile (sinkronisasi saldo dompet & status langganan ke Firestore)
+  static async updateUserProfile(user: User): Promise<void> {
+    if (!user || !user.uid) return;
+    const path = `users/${user.uid}`;
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      await setDoc(userDocRef, user, { merge: true });
+    } catch (e) {
+      console.warn('Gagal sinkron profil user ke Firestore:', e);
+    }
+  }
+
   // 2. Fetch Laundries for User (0 Reads jika sudah ada di cache)
   static async fetchLaundries(ownerId: string, cached: Laundry[] = []): Promise<Laundry[]> {
     if (cached && cached.length > 0 && cached.some((l) => l.ownerId === ownerId || l.id)) {
