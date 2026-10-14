@@ -81,7 +81,7 @@ export const DetailTransaksiView: React.FC<DetailTransaksiViewProps> = ({
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-2 space-y-2 max-w-lg mx-auto w-full overflow-y-auto">
+      <main className="flex-1 p-2 md:p-6 space-y-2 md:space-y-4 max-w-lg md:max-w-3xl mx-auto w-full overflow-y-auto">
         <div className="bg-white rounded-2xl border border-slate-200 p-3 shadow-2xs space-y-2">
           {/* Customer & Invoice Number header */}
           <div className="flex justify-between items-start border-b border-slate-100 pb-3">

@@ -2,6 +2,9 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import {
   getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
   doc,
   getDocFromServer,
   collection,
@@ -18,11 +21,28 @@ import firebaseConfig from '../firebase-applet-config.json';
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// CRITICAL: Handle standard (default) or named databaseId
-export const db =
+// Initialize Firestore with Persistent IndexedDB Local Cache to prevent quota leaks
+const databaseId =
   !firebaseConfig.firestoreDatabaseId || firebaseConfig.firestoreDatabaseId === '(default)'
-    ? getFirestore(app)
-    : getFirestore(app, firebaseConfig.firestoreDatabaseId);
+    ? undefined
+    : firebaseConfig.firestoreDatabaseId;
+
+let firestoreInstance;
+try {
+  firestoreInstance = initializeFirestore(
+    app,
+    {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    },
+    databaseId
+  );
+} catch (e) {
+  firestoreInstance = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
+}
+
+export const db = firestoreInstance;
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
@@ -64,11 +84,17 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   throw new Error(JSON.stringify(errInfo));
 }
 
-// Test initial connection as required by skill
+// Test initial connection as required by skill (dengan session guard agar tidak boros read saat reload)
 export async function testConnection(): Promise<boolean> {
   try {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('fb_conn_ok')) {
+      return true;
+    }
     await getDocFromServer(doc(db, 'test', 'connection'));
     console.log('Firebase connection verified');
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('fb_conn_ok', '1');
+    }
     return true;
   } catch (error) {
     if (error instanceof Error && error.message.includes('the client is offline')) {
@@ -76,6 +102,9 @@ export async function testConnection(): Promise<boolean> {
       return false;
     }
     // Document not existing is normal and means online connection works
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('fb_conn_ok', '1');
+    }
     return true;
   }
 }

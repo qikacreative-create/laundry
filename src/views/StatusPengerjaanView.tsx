@@ -9,7 +9,9 @@ import {
   ChevronLeft,
   Filter,
   CheckCircle,
-  Calendar
+  Calendar,
+  Truck,
+  CheckCheck,
 } from 'lucide-react';
 import { Transaksi, Layanan, User, SettingsData } from '../types';
 import { formatShortDate, formatShortTime, formatRupiah } from '../utils/formatters';
@@ -24,6 +26,8 @@ interface StatusPengerjaanViewProps {
   activeLaundryId: string;
   onOpenDetail: (transaksiId: string) => void;
   onUpdateTransaksi: (updated: Transaksi) => void;
+  onAmbilTransaksi?: (transaksi: Transaksi) => void;
+  onAmbilBanyakTransaksi?: (transaksiList: Transaksi[]) => void;
 }
 
 export const StatusPengerjaanView: React.FC<StatusPengerjaanViewProps> = ({
@@ -35,9 +39,12 @@ export const StatusPengerjaanView: React.FC<StatusPengerjaanViewProps> = ({
   activeLaundryId,
   onOpenDetail,
   onUpdateTransaksi,
+  onAmbilTransaksi,
+  onAmbilBanyakTransaksi,
 }) => {
   const [selectedTrxForStaff, setSelectedTrxForStaff] = useState<Transaksi | null>(null);
   const [statusFilter, setStatusFilter] = useState<'semua' | 'selesai' | 'baru_masuk' | 'sedang_dikerjakan'>('semua');
+  const [showConfirmBulkAmbil, setShowConfirmBulkAmbil] = useState(false);
 
   // Filter tasks for active laundry that are not yet "Diambil"
   const activeOrders = useMemo(() => {
@@ -189,7 +196,7 @@ export const StatusPengerjaanView: React.FC<StatusPengerjaanViewProps> = ({
       </header>
 
       {/* Main Area */}
-      <main className="flex-1 p-3 space-y-3 overflow-y-auto max-w-xl mx-auto w-full">
+      <main className="flex-1 p-3 md:p-6 space-y-3 md:space-y-4 overflow-y-auto max-w-xl md:max-w-4xl lg:max-w-5xl mx-auto w-full">
         {/* Estimasi Summary Counters (Matches card_estimasi_summary) */}
         <div className="grid grid-cols-4 gap-2 bg-white rounded-2xl p-3 border border-slate-200 shadow-2xs text-center text-xs">
           <div className="p-2 rounded-xl bg-red-50 text-red-700">
@@ -328,6 +335,26 @@ export const StatusPengerjaanView: React.FC<StatusPengerjaanViewProps> = ({
           </div>
         </div>
 
+        {/* Tombol Aksi Massal: Selesaikan & Arsipkan Semua Cucian Selesai */}
+        {filterCounts.selesai > 0 && (statusFilter === 'selesai' || statusFilter === 'semua') && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex flex-col sm:flex-row items-center justify-between gap-2.5 shadow-2xs">
+            <div className="flex items-center gap-2 text-xs">
+              <Truck className="w-4 h-4 text-emerald-700 shrink-0" />
+              <span className="text-emerald-900 font-medium">
+                Terdapat <strong className="font-black text-emerald-800">{filterCounts.selesai}</strong> pesanan berstatus <strong>Selesai</strong> siap diambil.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowConfirmBulkAmbil(true)}
+              className="w-full sm:w-auto px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-xs flex items-center justify-center gap-1.5 transition active:scale-95 shrink-0"
+            >
+              <CheckCheck className="w-3.5 h-3.5" />
+              <span>Tandai Semua Sudah Diambil ({filterCounts.selesai})</span>
+            </button>
+          </div>
+        )}
+
         {/* List of Orders in Production */}
         <div className="space-y-1.5">
           {displayedOrders.length === 0 ? (
@@ -426,10 +453,15 @@ export const StatusPengerjaanView: React.FC<StatusPengerjaanViewProps> = ({
                           <span>Selesai</span>
                         </button>
                       ) : (
-                        <div className="px-2 py-0.5 rounded-xl bg-emerald-100 text-emerald-700 text-[10px] font-bold flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" />
-                          <span>Selesai</span>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => onAmbilTransaksi?.(trx)}
+                          title="Serahkan ke Pelanggan (Masuk Arsip)"
+                          className="px-2.5 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold flex items-center gap-1 shadow-2xs active:scale-90 transition"
+                        >
+                          <Truck className="w-3 h-3" />
+                          <span>Serahkan</span>
+                        </button>
                       )}
                     </div>
                   </div>
@@ -483,6 +515,51 @@ export const StatusPengerjaanView: React.FC<StatusPengerjaanViewProps> = ({
         transaksi={selectedTrxForStaff}
         onAssign={handleAssignStaff}
       />
+
+      {/* MODAL KONFIRMASI AMBIL / ARSIPKAN MASSAL */}
+      {showConfirmBulkAmbil && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto mb-3 shadow-xs">
+              <Truck className="w-7 h-7" />
+            </div>
+
+            <h3 className="text-lg font-black text-slate-900 text-center tracking-tight">
+              Tandai Semua Selesai Sudah Diambil?
+            </h3>
+            <p className="text-xs text-slate-600 text-center mt-1 leading-relaxed">
+              Sebanyak <strong className="text-emerald-700 font-extrabold">{filterCounts.selesai} pesanan</strong> berstatus Selesai akan ditandai <strong>"Diambil"</strong>, otomatis lunas, dan langsung dipindahkan ke <strong>Arsip Transaksi</strong>.
+            </p>
+
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs mt-4">
+              💡 <strong>Hasil:</strong> Antrean aktif kasir Anda akan langsung bersih dari 514 cucian yang menumpuk. Rekap omzet & data pelanggan tetap tersimpan 100% aman di Laporan Keuangan dan Arsip.
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 mt-5">
+              <button
+                type="button"
+                onClick={() => setShowConfirmBulkAmbil(false)}
+                className="py-2.5 px-4 rounded-xl border border-slate-300 hover:bg-slate-100 font-bold text-xs text-slate-700 transition active:scale-95"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const completedList = activeOrders.filter((t) => t.status === 'Selesai');
+                  onAmbilBanyakTransaksi?.(completedList);
+                  setShowConfirmBulkAmbil(false);
+                  alert(`${completedList.length} pesanan berhasil ditandai Diambil dan dipindahkan ke Arsip!`);
+                }}
+                className="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 font-black text-xs text-white shadow-md transition active:scale-95 flex items-center justify-center gap-1.5"
+              >
+                <CheckCheck className="w-4 h-4" />
+                <span>Ya, Arsipkan Semua</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

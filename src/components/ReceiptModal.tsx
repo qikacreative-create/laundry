@@ -201,9 +201,6 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({
                 )}
                 <div className="flex justify-between pt-1">
                   <span>Yth. Bapak/Ibu</span>
-                  {settings.poinSystemEnabled && pelanggan && (
-                    <span className="font-bold">Poin: {formatNumberOnly(pelanggan.poin)}</span>
-                  )}
                 </div>
               </div>
 

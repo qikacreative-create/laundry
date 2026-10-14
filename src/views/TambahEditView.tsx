@@ -45,25 +45,18 @@ export const TambahEditView: React.FC<TambahEditViewProps> = ({
   const [transferDetail, setTransferDetail] = useState<string>(transaksiToEdit?.metodePembayaranDetail || 'QRIS');
   const [dpInput, setDpInput] = useState<number>(transaksiToEdit?.jumlahDp || 0);
 
-  // Loyalty Points
-  const [poinDigunakan, setPoinDigunakan] = useState<number>(0);
-
   // Selected Service Details
   const currentLayanan = layananList.find((l) => l.id === selectedLayananId);
 
-  // Total raw calculation
+  // Total calculation (points discount disabled)
   const totalHargaAsli = items.reduce((sum, it) => sum + it.subtotal, 0);
-
-  // Points discount calculation
-  const nilaiTukar = settings.nilaiTukarPoin || 1;
-  const potonganPoinRp = Math.min(totalHargaAsli, (poinDigunakan || 0) * nilaiTukar);
-  const totalSetelahDiskon = Math.max(0, totalHargaAsli - potonganPoinRp);
+  const totalSetelahDiskon = totalHargaAsli;
 
   useEffect(() => {
     if (isLunas) {
-      setDpInput(totalSetelahDiskon);
+      setDpInput(totalHargaAsli);
     }
-  }, [isLunas, totalSetelahDiskon]);
+  }, [isLunas, totalHargaAsli]);
 
   // Customer lookup
   const handleCustomerNameChange = (val: string) => {
@@ -137,7 +130,7 @@ export const TambahEditView: React.FC<TambahEditViewProps> = ({
       nomorTelepon: nomorTelepon.trim() || null,
       alamat: alamat.trim() || null,
       totalHarga: totalHargaAsli,
-      jumlahDp: finalDp + potonganPoinRp,
+      jumlahDp: finalDp,
       tanggalMasuk: transaksiToEdit?.tanggalMasuk || now,
       tanggalSelesai: estDate,
       status: transaksiToEdit?.status || 'Diterima',
@@ -167,7 +160,7 @@ export const TambahEditView: React.FC<TambahEditViewProps> = ({
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-2 space-y-2 overflow-y-auto max-w-xl mx-auto w-full">
+      <main className="flex-1 p-2 md:p-6 space-y-2 md:space-y-4 overflow-y-auto max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto w-full">
         {/* Customer Section Card */}
         <div className="bg-white rounded-2xl border border-slate-200 p-2  shadow-2xs space-y-1 relative">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
@@ -204,9 +197,6 @@ export const TambahEditView: React.FC<TambahEditViewProps> = ({
                         <div className="font-bold text-slate-800">{p.nama}</div>
                         {p.alamat && <div className="text-[10px] text-slate-400">{p.alamat}</div>}
                       </div>
-                      <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
-                        {p.poin} Poin
-                      </span>
                     </button>
                   ))}
                 </div>

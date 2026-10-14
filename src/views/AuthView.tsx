@@ -228,7 +228,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLoginSuccess, staffList, o
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="laundrysuciapp@gmail.com"
+                  placeholder="contoh@gmail.com"
                   className="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#800000]"
                 />
                 <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />

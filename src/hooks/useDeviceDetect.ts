@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 
 export interface DeviceInfo {
-  isMobile: boolean; // Screen width < 768px OR mobile user agent
+  isMobile: boolean; // True specifically for HP / Phone or small screen (< 768px)
+  isPcOrTablet: boolean; // True for PC / Desktop / Tablet
   isPhone: boolean; // Phone specifically
   isTablet: boolean;
   isDesktop: boolean;
@@ -16,6 +17,7 @@ export function detectDevice(): DeviceInfo {
   if (typeof window === 'undefined') {
     return {
       isMobile: false,
+      isPcOrTablet: true,
       isPhone: false,
       isTablet: false,
       isDesktop: true,
@@ -59,15 +61,17 @@ export function detectDevice(): DeviceInfo {
   const isPhoneUA = /mobile|iphone|ipod|android.*mobile|blackberry|iemobile|opera mini/i.test(uaLower);
   const isTabletUA = isIPad || (!isPhoneUA && (/tablet|android/i.test(uaLower)));
 
-  const isPhone = isPhoneUA || (isSmallScreen && isTouchDevice);
-  const isTablet = isTabletUA || (isMediumScreen && isTouchDevice);
+  const isPhone = isPhoneUA || (isSmallScreen && !isTabletUA);
+  const isTablet = isTabletUA || (isMediumScreen && !isPhone);
   const isDesktop = !isPhone && !isTablet && screenWidth >= 1024;
 
-  // Broad mobile category (phone or narrow screen)
+  // HP category (phone or narrow screen under 768px)
   const isMobile = isPhone || isSmallScreen;
+  const isPcOrTablet = !isMobile;
 
   return {
     isMobile,
+    isPcOrTablet,
     isPhone,
     isTablet,
     isDesktop,

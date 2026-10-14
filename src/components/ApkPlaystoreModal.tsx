@@ -23,8 +23,8 @@ export const ApkPlaystoreModal: React.FC<ApkPlaystoreModalProps> = ({ isOpen, on
     {
       packageId: 'com.kafilasuci4.app',
       host: currentOrigin.replace(/^https?:\/\//, ''),
-      name: 'Laundry Suci POS',
-      launcherName: 'LaundrySuci',
+      name: 'Laundry POS',
+      launcherName: 'LaundryApp',
       themeColor: '#800000',
       navigationColor: '#800000',
       backgroundColor: '#800000',

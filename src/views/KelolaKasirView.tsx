@@ -62,7 +62,7 @@ export const KelolaKasirView: React.FC<KelolaKasirViewProps> = ({
         </button>
       </header>
 
-      <main className="flex-1 p-3 space-y-2.5 overflow-y-auto max-w-xl mx-auto w-full">
+      <main className="flex-1 p-3 md:p-6 space-y-2.5 overflow-y-auto max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto w-full">
         {cashiers.length === 0 ? (
           <div className="p-8 bg-white rounded-2xl text-center text-xs text-slate-400 border border-slate-200 italic">
             Belum ada akun kasir terdaftar. Tekan tombol (+ Kasir) di kanan atas.

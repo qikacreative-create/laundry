@@ -30,9 +30,9 @@ export const defaultSettings: SettingsData = {
   tampilkanTombolCetak: true,
   tampilkanRincianBayar: true,
   selesaikanSaatDitugaskan: false,
-  poinSystemEnabled: true,
-  rupiahPerPoin: 10, // 10.000 transaksi = 1.000 poin -> 10 rupiah per poin
-  nilaiTukarPoin: 1, // 1 Poin = Rp 1
+  poinSystemEnabled: false,
+  rupiahPerPoin: 10,
+  nilaiTukarPoin: 1,
   pemasukanManualEnabled: true,
   waNotificationEnabled: true,
 };
@@ -105,7 +105,7 @@ export const defaultStaffList: User[] = [
 
 export const defaultOwnerUser: User = {
   uid: 'own-1',
-  emailOrPhone: 'laundrysuciapp@gmail.com',
+  emailOrPhone: 'owner@laundry.com',
   username: 'Kafela',
   displayName: "Kafela's Laundry",
   nomorTelepon: '081234567890',
@@ -376,7 +376,16 @@ export class StorageService {
     try {
       localStorage.setItem(STORAGE_KEY_PREFIX + key, JSON.stringify(value));
     } catch (e) {
-      console.error('Storage set error:', e);
+      console.warn('Storage set error (mungkin kuota localStorage penuh):', e);
+      // Jika key adalah transaksi dan memori penuh, simpan subset 60 transaksi terbaru saja di localStorage
+      if (key === 'transaksi' && Array.isArray(value)) {
+        try {
+          const trimmed = (value as any[]).slice(0, 60);
+          localStorage.setItem(STORAGE_KEY_PREFIX + key, JSON.stringify(trimmed));
+        } catch {
+          // Abaikan jika masih penuh, data utama tetap aman di IndexedDB
+        }
+      }
     }
   }
 

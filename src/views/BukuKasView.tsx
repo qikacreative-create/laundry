@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ArrowLeft, ChevronLeft, ChevronRight, Calendar, DollarSign, Activity } from 'lucide-react';
 import { Transaksi, Pengeluaran, ArusKas } from '../types';
 import { formatRupiah, formatShortTime, formatDateIndo } from '../utils/formatters';
+import { FirebaseSyncService } from '../utils/firebaseSync';
 
 interface BukuKasViewProps {
   onBack: () => void;
@@ -22,6 +23,21 @@ export const BukuKasView: React.FC<BukuKasViewProps> = ({
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [filterType, setFilterType] = useState<'arus_kas' | 'aktivitas'>('arus_kas');
+  const [monthArchive, setMonthArchive] = useState<Transaksi[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const year = selectedDate.getFullYear();
+    const month = selectedDate.getMonth();
+    FirebaseSyncService.fetchArsipBulan(activeLaundryId, year, month)
+      .then((list) => {
+        if (isMounted) setMonthArchive(list);
+      })
+      .catch(console.warn);
+    return () => {
+      isMounted = false;
+    };
+  }, [activeLaundryId, selectedDate]);
 
   const startOfDay = useMemo(() => {
     const d = new Date(selectedDate);
@@ -57,7 +73,10 @@ export const BukuKasView: React.FC<BukuKasViewProps> = ({
     let countDiambil = 0;
     let countKeluar = 0;
 
-    const branchTrx = transaksiList.filter((t) => t.laundryId === activeLaundryId);
+    const map = new Map<string, Transaksi>();
+    transaksiList.forEach((t) => map.set(t.id, t));
+    monthArchive.forEach((t) => map.set(t.id, t));
+    const branchTrx = Array.from(map.values()).filter((t) => t.laundryId === activeLaundryId);
 
     // 1. Transactions entered on this day
     branchTrx.forEach((trx) => {
@@ -181,7 +200,7 @@ export const BukuKasView: React.FC<BukuKasViewProps> = ({
         </button>
       </div>
 
-      <main className="flex-1 p-3 space-y-3 overflow-y-auto max-w-xl mx-auto w-full">
+      <main className="flex-1 p-3 md:p-6 space-y-3 md:space-y-4 overflow-y-auto max-w-xl md:max-w-4xl lg:max-w-5xl mx-auto w-full">
         {/* Financial Summary Card (Matches card_financial_summary) */}
         <div className="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-2xs space-y-3">
           {/* Mini counts */}

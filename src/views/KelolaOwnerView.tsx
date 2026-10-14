@@ -135,7 +135,7 @@ export const KelolaOwnerView: React.FC<KelolaOwnerViewProps> = ({
         <h1 className="font-bold text-base tracking-wide">Owner & Kelola Cabang</h1>
       </header>
 
-      <main className="flex-1 p-3 space-y-3 overflow-y-auto max-w-xl mx-auto w-full">
+      <main className="flex-1 p-3 md:p-6 space-y-3 md:space-y-4 overflow-y-auto max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto w-full">
         {/* Owner Display Banner */}
         <div className="text-center py-1">
           <div className="text-xs text-slate-400 font-bold uppercase tracking-widest">Akun Pemilik</div>

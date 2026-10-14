@@ -101,7 +101,7 @@ export const KelolaPelangganView: React.FC<KelolaPelangganViewProps> = ({
       </header>
 
       {/* Search Bar */}
-      <div className="p-3">
+      <div className="p-3 md:px-6 md:pt-5 max-w-xl md:max-w-4xl lg:max-w-5xl mx-auto w-full">
         <div className="relative">
           <input
             type="text"
@@ -115,12 +115,12 @@ export const KelolaPelangganView: React.FC<KelolaPelangganViewProps> = ({
       </div>
 
       {/* Customer Count Badge */}
-      <div className="px-4 py-1 text-xs font-bold text-slate-500 flex justify-between items-center">
+      <div className="px-4 md:px-6 py-1 text-xs font-bold text-slate-500 flex justify-between items-center max-w-xl md:max-w-4xl lg:max-w-5xl mx-auto w-full">
         <span>Total Terdaftar: {pelangganList.length} Pelanggan</span>
       </div>
 
       {/* Customers List */}
-      <main className="flex-1 px-3 space-y-2 overflow-y-auto max-w-xl mx-auto w-full">
+      <main className="flex-1 px-3 md:px-6 space-y-2 overflow-y-auto max-w-xl md:max-w-4xl lg:max-w-5xl mx-auto w-full">
         {filtered.length === 0 ? (
           <div className="p-8 bg-white rounded-2xl text-center text-xs text-slate-400 border border-slate-200 italic">
             Belum ada pelanggan ditemukan.
@@ -134,12 +134,6 @@ export const KelolaPelangganView: React.FC<KelolaPelangganViewProps> = ({
               <div className="flex-1 min-w-0 space-y-0.5">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-sm text-slate-900 truncate">{p.nama}</span>
-                  {settings.poinSystemEnabled && (
-                    <span className="inline-flex items-center gap-1 text-[10px] bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded-md font-bold">
-                      <Award className="w-3 h-3 text-amber-500" />
-                      {p.poin} Poin
-                    </span>
-                  )}
                 </div>
 
                 {p.nomorTelepon && (

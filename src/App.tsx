@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from './firebase';
 import { FirebaseSyncService } from './utils/firebaseSync';
 import { StorageService, defaultSettings, defaultOwnerUser } from './utils/storage';
+import { IndexedDbService } from './utils/indexedDb';
 import {
   Transaksi,
   Layanan,
@@ -35,8 +36,11 @@ import { SettingsView } from './views/SettingsView';
 import { AturKasModal } from './components/AturKasModal';
 import { SwitchBranchModal } from './components/SwitchBranchModal';
 import { ApkPlaystoreModal } from './components/ApkPlaystoreModal';
+import { LimitTransaksiModal } from './components/LimitTransaksiModal';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { DesktopSidebar } from './components/DesktopSidebar';
 import { useDeviceDetect } from './hooks/useDeviceDetect';
+import { Lock } from 'lucide-react';
 
 type ViewType =
   | 'splash'
@@ -55,11 +59,6 @@ type ViewType =
   | 'settings';
 
 export default function App() {
-  // Initialize sample data if first load
-  useEffect(() => {
-    StorageService.initData();
-  }, []);
-
   // Application State
   const [activeView, setActiveView] = useState<ViewType>('splash');
   const [currentUser, setCurrentUser] = useState<User | null>(() =>
@@ -85,6 +84,16 @@ export default function App() {
       items: Array.isArray(t?.items) ? t.items : [],
     }));
   });
+
+  // Initialize sample data if first load and hydrate from IndexedDB
+  useEffect(() => {
+    StorageService.initData();
+    IndexedDbService.getActiveTransaksi(activeLaundryId).then((idbList) => {
+      if (idbList && idbList.length > 0 && transaksiList.length === 0) {
+        setTransaksiList(idbList);
+      }
+    }).catch(console.warn);
+  }, [activeLaundryId]);
 
   const [layananList, setLayananList] = useState<Layanan[]>(() =>
     StorageService.get<Layanan[]>('layanan', [])
@@ -126,6 +135,7 @@ export default function App() {
   const [isAturKasOpen, setIsAturKasOpen] = useState(false);
   const [isSwitchBranchOpen, setIsSwitchBranchOpen] = useState(false);
   const [isApkModalOpen, setIsApkModalOpen] = useState(false);
+  const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
 
   // Active branch entity
   const activeLaundry =
@@ -181,40 +191,58 @@ export default function App() {
     StorageService.set('staff', newList);
   };
 
-  // Load real user and real Firestore data when authenticated
-  const loadFirestoreData = async (user: User) => {
+  // Load real user and real Firestore data when authenticated (DENGAN PENGHEMATAN KUOTA OTOMATIS)
+  const loadFirestoreData = async (user: User, forceSync = false) => {
+    // Cooldown Guard: Jika data lokal sudah ada dan baru saja tersinkron < 3 menit lalu,
+    // jangan panggil server Firestore berulang-ulang saat reload halaman!
+    const now = Date.now();
+    const lastGlobalSync = StorageService.get<number>('last_global_sync', 0);
+    const hasLocalData = transaksiList.length > 0 || StorageService.get<Transaksi[]>('transaksi', []).length > 0;
+
+    if (!forceSync && hasLocalData && now - lastGlobalSync < 3 * 60 * 1000) {
+      console.log('⚡ Penghematan Kuota Aktif: Menggunakan cache lokal (0 Reads Firestore)');
+      return;
+    }
+
     try {
-      const userLaundries = await FirebaseSyncService.fetchLaundries(user.uid);
+      const userLaundries = await FirebaseSyncService.fetchLaundries(user.uid, laundries);
       const targetLaundryId = userLaundries[0]?.id || user.laundryId || `lnd-${user.uid}`;
       if (userLaundries.length > 0) {
         updateLaundries(userLaundries);
       }
       setActiveLaundryId(targetLaundryId);
 
-      // Fetch transactions for this real user/branch
-      const trxs = await FirebaseSyncService.fetchTransaksi(targetLaundryId);
+      // 1. Delta Sync transaksi AKTIF saja (0 Reads jika sudah di-cache / tidak ada perubahan)
+      const currentCachedTrx = transaksiList.length > 0 ? transaksiList : StorageService.get<Transaksi[]>('transaksi', []);
+      const trxs = await FirebaseSyncService.fetchTransaksiAktif(targetLaundryId, currentCachedTrx, forceSync);
       updateTransaksiList(trxs);
 
-      // Fetch customers
-      const custs = await FirebaseSyncService.fetchPelanggan(targetLaundryId);
-      updatePelangganList(custs);
+      // 2. Cached Sync Pelanggan (0 reads jika sudah ada di cache)
+      const custs = await FirebaseSyncService.fetchPelanggan(targetLaundryId, pelangganList);
+      if (custs && custs.length > 0) {
+        updatePelangganList(custs);
+      }
 
-      // Fetch services
-      const lays = await FirebaseSyncService.fetchLayanan(targetLaundryId);
-      if (lays.length > 0) {
+      // 3. Cached Sync Layanan
+      const lays = await FirebaseSyncService.fetchLayanan(targetLaundryId, layananList);
+      if (lays && lays.length > 0) {
         updateLayananList(lays);
       }
 
-      // Fetch expenses
-      const exps = await FirebaseSyncService.fetchPengeluaran(targetLaundryId);
-      updatePengeluaranList(exps);
+      // 4. Cached Sync Pengeluaran (hanya ambil riwayat terbaru, max 100)
+      const exps = await FirebaseSyncService.fetchPengeluaran(targetLaundryId, pengeluaranList);
+      if (exps && exps.length > 0) {
+        updatePengeluaranList(exps);
+      }
 
-      // Fetch settings
-      const st = await FirebaseSyncService.fetchSettings(targetLaundryId);
+      // 5. Cached Sync Settings
+      const st = await FirebaseSyncService.fetchSettings(targetLaundryId, settings);
       if (st) {
         setSettings(st);
         StorageService.set('settings', st);
       }
+
+      StorageService.set('last_global_sync', now);
     } catch (err) {
       console.error('Error loading Firestore data:', err);
     }
@@ -225,15 +253,19 @@ export default function App() {
     StorageService.initData();
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
-        const profile = await FirebaseSyncService.getOrCreateUserProfile({
-          uid: fbUser.uid,
-          email: fbUser.email,
-          displayName: fbUser.displayName,
-          phoneNumber: fbUser.phoneNumber,
-        });
-        setCurrentUser(profile);
-        StorageService.set('active_user', profile);
-        await loadFirestoreData(profile);
+        try {
+          const profile = await FirebaseSyncService.getOrCreateUserProfile({
+            uid: fbUser.uid,
+            email: fbUser.email,
+            displayName: fbUser.displayName,
+            phoneNumber: fbUser.phoneNumber,
+          });
+          setCurrentUser(profile);
+          StorageService.set('active_user', profile);
+          await loadFirestoreData(profile);
+        } catch (err) {
+          console.warn('Gagal memuat data pengguna pada onAuthStateChanged:', err);
+        }
       } else {
         const stored = StorageService.get<User | null>('active_user', null);
         if (!stored) {
@@ -282,32 +314,32 @@ export default function App() {
       updateTransaksiList(updatedList);
       FirebaseSyncService.saveTransaksi(newTrx).catch(console.error);
 
-      // Add points to customer if enabled
-      if (settings.poinSystemEnabled && data.namaPelanggan) {
+      // Save customer contact if new
+      if (data.namaPelanggan) {
         const existingCust = pelangganList.find(
           (p) => p.nama.toLowerCase() === data.namaPelanggan.toLowerCase()
         );
-        const earnedPoints = Math.floor(
-          data.totalHarga / (settings.rupiahPerPoin * 10 || 100)
-        );
-
-        if (existingCust) {
-          const updatedCust = { ...existingCust, poin: existingCust.poin + earnedPoints };
-          updatePelangganList(
-            pelangganList.map((p) => (p.id === existingCust.id ? updatedCust : p))
-          );
-          FirebaseSyncService.savePelanggan(updatedCust).catch(console.error);
-        } else {
+        if (!existingCust) {
           const newCust: Pelanggan = {
             id: `pel-${Date.now()}`,
             laundryId: activeLaundryId,
             nama: data.namaPelanggan,
             nomorTelepon: data.nomorTelepon,
             alamat: data.alamat,
-            poin: earnedPoints,
+            poin: 0,
           };
           updatePelangganList([...pelangganList, newCust]);
           FirebaseSyncService.savePelanggan(newCust).catch(console.error);
+        } else if (data.nomorTelepon || data.alamat) {
+          const updatedCust = {
+            ...existingCust,
+            nomorTelepon: data.nomorTelepon || existingCust.nomorTelepon,
+            alamat: data.alamat || existingCust.alamat,
+          };
+          updatePelangganList(
+            pelangganList.map((p) => (p.id === existingCust.id ? updatedCust : p))
+          );
+          FirebaseSyncService.savePelanggan(updatedCust).catch(console.error);
         }
       }
 
@@ -333,6 +365,60 @@ export default function App() {
       transaksiList.map((t) => (t.id === trx.id ? updated : t))
     );
     FirebaseSyncService.saveTransaksi(updated).catch(console.error);
+  };
+
+  const handleAmbilBanyakTransaksi = (list: Transaksi[]) => {
+    if (!list || list.length === 0) return;
+    const now = Date.now();
+    const updatedIds = new Set(list.map((t) => t.id));
+    const updatedList = transaksiList.map((t) => {
+      if (updatedIds.has(t.id)) {
+        return {
+          ...t,
+          status: 'Diambil' as const,
+          statusPembayaran: 'Lunas' as const,
+          tanggalPengambilan: now,
+        };
+      }
+      return t;
+    });
+    updateTransaksiList(updatedList);
+    list.forEach((t) => {
+      FirebaseSyncService.saveTransaksi({
+        ...t,
+        status: 'Diambil',
+        statusPembayaran: 'Lunas',
+        tanggalPengambilan: now,
+      }).catch(console.error);
+    });
+  };
+
+  // Active uncollected orders for current branch
+  const activeUncollectedTrx = useMemo(() => {
+    return transaksiList.filter(
+      (t) => t.laundryId === activeLaundryId && t.status !== 'Diambil'
+    );
+  }, [transaksiList, activeLaundryId]);
+
+  const handleRequestNewTransaksi = () => {
+    if (activeUncollectedTrx.length >= 300) {
+      setIsLimitModalOpen(true);
+    } else {
+      setTransaksiToEdit(null);
+      setActiveView('tambah_edit');
+    }
+  };
+
+  const handleProceedCreateNewFromLimit = () => {
+    if (activeUncollectedTrx.length >= 400) {
+      alert(
+        'Transaksi aktif telah mencapai batas maksimal (400 pesanan). Harap arsipkan pesanan terlebih dahulu sebelum membuat transaksi baru.'
+      );
+      return;
+    }
+    setIsLimitModalOpen(false);
+    setTransaksiToEdit(null);
+    setActiveView('tambah_edit');
   };
 
   const handleSaveCustomer = (cust: Pelanggan) => {
@@ -498,17 +584,63 @@ export default function App() {
   const currentSelectedTransaksi =
     transaksiList.find((t) => t.id === selectedTransaksiId) || null;
 
-  // Real-time device detection (Phone / Mobile vs PC / Desktop)
+  // Real-time device detection (Phone / Mobile vs PC / Desktop / Tablet)
   const device = useDeviceDetect();
   const isEffectiveMobile = device.isMobile;
+  const showDesktopSidebar =
+    !isEffectiveMobile && activeView !== 'splash' && activeView !== 'auth' && !!currentUser;
+
+  const handleLogoutUser = async () => {
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.error(e);
+    }
+    setCurrentUser(null);
+    StorageService.set('active_user', null);
+    StorageService.clearAllDummyData();
+    setActiveView('auth');
+  };
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-start text-slate-800 antialiased selection:bg-[#800000] selection:text-white">
       {/* Offline Toast */}
       <OfflineIndicator />
 
-      {/* Main Container */}
-      <div className={`w-full max-w-6xl bg-slate-100 ${activeView === 'dashboard' ? 'h-[100dvh] overflow-hidden' : 'min-h-screen'} relative flex flex-col overflow-x-hidden`}>
+      {/* Main Container: Full Web App Shell with Sidebar on PC/Tablet, Original Container on HP */}
+      <div
+        className={
+          showDesktopSidebar
+            ? 'w-full h-screen overflow-hidden bg-slate-100 flex flex-row'
+            : `w-full max-w-6xl bg-slate-100 ${
+                activeView === 'dashboard' ? 'h-[100dvh] overflow-hidden' : 'min-h-screen'
+              } relative flex flex-col overflow-x-hidden`
+        }
+      >
+        {showDesktopSidebar && currentUser && (
+          <DesktopSidebar
+            activeView={activeView}
+            onSelectView={(v) => setActiveView(v)}
+            onOpenNewTransaksi={handleRequestNewTransaksi}
+            onOpenAturKas={() => setIsAturKasOpen(true)}
+            onOpenSwitchBranch={() => setIsSwitchBranchOpen(true)}
+            onLogout={handleLogoutUser}
+            currentUser={currentUser}
+            activeLaundry={activeLaundry}
+            laundries={laundries}
+            transaksiList={transaksiList}
+            pelangganCount={pelangganList.filter((p) => p.laundryId === activeLaundryId).length || pelangganList.length}
+            layananCount={layananList.filter((l) => l.laundryId === activeLaundryId).length || layananList.length}
+          />
+        )}
+
+        <div
+          className={
+            showDesktopSidebar
+              ? 'flex-1 h-full overflow-y-auto relative flex flex-col min-w-0 bg-slate-100'
+              : 'contents'
+          }
+        >
         {/* VIEW ROUTER */}
         {activeView === 'splash' && (
           <SplashView
@@ -543,12 +675,11 @@ export default function App() {
             currentUser={currentUser}
             activeLaundry={activeLaundry}
             laundries={laundries}
+            pengeluaranList={pengeluaranList}
             isMobile={isEffectiveMobile}
             deviceInfo={device}
-            onOpenNewTransaksi={() => {
-              setTransaksiToEdit(null);
-              setActiveView('tambah_edit');
-            }}
+            onOpenNewTransaksi={handleRequestNewTransaksi}
+            onOpenLimitModal={() => setIsLimitModalOpen(true)}
             onOpenDetailTransaksi={(id) => {
               setSelectedTransaksiId(id);
               setActiveView('detail_transaksi');
@@ -564,6 +695,7 @@ export default function App() {
             onOpenKelolaPelanggan={() => setActiveView('kelola_pelanggan')}
             onOpenKelolaLayanan={() => setActiveView('kelola_layanan')}
             onOpenKelolaOwner={() => setActiveView('kelola_owner')}
+            onSyncCloudData={() => loadFirestoreData(currentUser, true)}
             onSelesaikanTransaksi={(trx) => {
               if (trx.status === 'Diterima') {
                 const updated = { ...trx, status: 'Proses' as const };
@@ -582,19 +714,58 @@ export default function App() {
               }
             }}
             onAmbilTransaksi={handleAmbilTransaksi}
+            onAmbilBanyakTransaksi={handleAmbilBanyakTransaksi}
           />
         )}
 
         {activeView === 'tambah_edit' && (
-          <TambahEditView
-            onBack={() => setActiveView('dashboard')}
-            layananList={layananList}
-            pelangganList={pelangganList}
-            settings={settings}
-            activeLaundryId={activeLaundryId}
-            transaksiToEdit={transaksiToEdit}
-            onSave={handleSaveTransaction}
-          />
+          !transaksiToEdit && activeUncollectedTrx.length >= 400 ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-slate-100 min-h-[75vh]">
+              <div className="max-w-md w-full bg-white rounded-3xl p-6 sm:p-7 border border-red-200 shadow-xl space-y-4">
+                <div className="w-16 h-16 rounded-3xl bg-red-100 text-red-600 flex items-center justify-center mx-auto shadow-inner">
+                  <Lock className="w-8 h-8 stroke-[2.5]" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-red-100 text-red-800">
+                    Batas Penuh (Maks. 400)
+                  </span>
+                  <h2 className="text-lg font-black text-slate-900 mt-1">
+                    Pembuatan Transaksi Baru Dikunci
+                  </h2>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Terdapat <strong className="text-red-600 font-black">{activeUncollectedTrx.length} pesanan aktif belum diambil</strong> di cabang ini.
+                  Sistem mengunci pembuatan transaksi baru sampai ada progres pengarsipan transaksi lama.
+                </p>
+                <div className="pt-2 space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsLimitModalOpen(true)}
+                    className="w-full py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition active:scale-95"
+                  >
+                    Buka Opsi Pengarsipan Cepat
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveView('dashboard')}
+                    className="w-full py-2.5 px-4 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs transition active:scale-95"
+                  >
+                    Kembali ke Dashboard
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <TambahEditView
+              onBack={() => setActiveView('dashboard')}
+              layananList={layananList}
+              pelangganList={pelangganList}
+              settings={settings}
+              activeLaundryId={activeLaundryId}
+              transaksiToEdit={transaksiToEdit}
+              onSave={handleSaveTransaction}
+            />
+          )
         )}
 
         {activeView === 'detail_transaksi' && currentSelectedTransaksi && currentUser && (
@@ -637,6 +808,8 @@ export default function App() {
                 transaksiList.map((t) => (t.id === updated.id ? updated : t))
               );
             }}
+            onAmbilTransaksi={handleAmbilTransaksi}
+            onAmbilBanyakTransaksi={handleAmbilBanyakTransaksi}
           />
         )}
 
@@ -677,10 +850,15 @@ export default function App() {
                 ...trx,
                 status: 'Diterima',
                 tanggalPengambilan: null,
+                terakhirDieditPada: Date.now(),
               };
-              updateTransaksiList(
-                transaksiList.map((t) => (t.id === trx.id ? restored : t))
-              );
+              const exists = transaksiList.some((t) => t.id === trx.id);
+              const updatedList = exists
+                ? transaksiList.map((t) => (t.id === trx.id ? restored : t))
+                : [restored, ...transaksiList];
+              updateTransaksiList(updatedList);
+              IndexedDbService.restoreToActive(activeLaundryId, restored).catch(console.error);
+              FirebaseSyncService.saveTransaksi(restored).catch(console.error);
             }}
           />
         )}
@@ -745,19 +923,10 @@ export default function App() {
             onOpenKelolaOwner={() => setActiveView('kelola_owner')}
             onOpenKelolaKasir={() => setActiveView('kelola_kasir')}
             onOpenApkModal={() => setIsApkModalOpen(true)}
-            onLogout={async () => {
-              try {
-                await signOut(auth);
-              } catch (e) {
-                console.error(e);
-              }
-              setCurrentUser(null);
-              StorageService.set('active_user', null);
-              StorageService.clearAllDummyData();
-              setActiveView('auth');
-            }}
+            onLogout={handleLogoutUser}
           />
         )}
+        </div>
 
         {/* Global Modals */}
         <AturKasModal
@@ -782,6 +951,21 @@ export default function App() {
         <ApkPlaystoreModal
           isOpen={isApkModalOpen}
           onClose={() => setIsApkModalOpen(false)}
+        />
+
+        {/* Modal Batas Transaksi Aktif (Peringatan di 300, Kunci di 400) */}
+        <LimitTransaksiModal
+          isOpen={isLimitModalOpen}
+          onClose={() => setIsLimitModalOpen(false)}
+          uncollectedList={activeUncollectedTrx}
+          onArsipSemua={handleAmbilBanyakTransaksi}
+          onArsipTigaBulan={handleAmbilBanyakTransaksi}
+          onArsipLunas={handleAmbilBanyakTransaksi}
+          onOpenStatusPengerjaan={() => {
+            setIsLimitModalOpen(false);
+            setActiveView('status_pengerjaan');
+          }}
+          onProceedCreateNew={handleProceedCreateNewFromLimit}
         />
       </div>
     </div>

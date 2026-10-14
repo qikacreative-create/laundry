@@ -213,7 +213,7 @@ export const KelolaLayananView: React.FC<KelolaLayananViewProps> = ({
       </header>
 
       {/* Main Container */}
-      <div className="max-w-2xl mx-auto w-full px-3 py-3 space-y-3">
+      <div className="max-w-2xl md:max-w-4xl lg:max-w-5xl mx-auto w-full px-3 md:px-6 py-3 md:py-6 space-y-3">
         {/* Search & Filter Controls */}
         <div className="bg-white p-3 rounded-2xl border border-slate-200/80 shadow-2xs space-y-2.5">
           <div className="relative">
